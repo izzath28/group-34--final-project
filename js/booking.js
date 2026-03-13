@@ -116,6 +116,18 @@ window.filterIndoor = function(type, el) {
     renderCenters();
 };
 
+window.updateGroundMap = function(name) {
+    const mapIframe = document.getElementById('grounds-iframe');
+    const mapSection = document.getElementById('grounds-map');
+    if (mapIframe) {
+        const query = encodeURIComponent(name + ", Sri Lanka");
+        mapIframe.src = `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+        if (mapSection) {
+            mapSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+};
+
 // ══════════════════════════════════════════
 // RENDER CENTERS GRID
 // ══════════════════════════════════════════
@@ -170,9 +182,14 @@ window.renderCenters = function() {
                         <div class="center-price">Rs. ${c.price.toLocaleString()} <span>/ hr</span></div>
                         <div class="center-stars">${stars} <small>${c.rating}</small></div>
                     </div>
-                    <button class="btn btn-primary book-now-btn" onclick="event.stopPropagation(); openBookingModal(${c.id})">
-                        ${full ? "Waitlist" : "Book Now"}
-                    </button>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-outline" style="padding: 9px 12px; font-size: 0.82rem;" title="Locate on Map" onclick="event.stopPropagation(); updateGroundMap('${c.name}')">
+                            <i class="fas fa-location-dot" style="margin:0"></i>
+                        </button>
+                        <button class="btn btn-primary book-now-btn" onclick="event.stopPropagation(); openBookingModal(${c.id})">
+                            ${full ? "Waitlist" : "Book"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>`;
