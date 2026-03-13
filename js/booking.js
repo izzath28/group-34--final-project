@@ -69,10 +69,49 @@ const CENTERS = [
 
 const TIME_SLOTS = ["06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00"];
 
-const CENTER_SLOTS = {};
-CENTERS.forEach(c => {
-    CENTER_SLOTS[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: Math.random() < 0.28 }));
-});
+// Load persistent slot data or initialize with random
+const SLOT_STORAGE_KEY = "ss_slots_v4";
+let CENTER_SLOTS = {};
+
+function loadSlots() {
+    try {
+        const saved = localStorage.getItem(SLOT_STORAGE_KEY);
+        if (saved) {
+            CENTER_SLOTS = JSON.parse(saved);
+        } else {
+            CENTERS.forEach(c => {
+                CENTER_SLOTS[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: Math.random() < 0.28 }));
+            });
+            saveSlots();
+        }
+    } catch (_) {
+        CENTERS.forEach(c => {
+            CENTER_SLOTS[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: Math.random() < 0.28 }));
+        });
+    }
+}
+
+function saveSlots() {
+    localStorage.setItem(SLOT_STORAGE_KEY, JSON.stringify(CENTER_SLOTS));
+}
+
+loadSlots();
+
+// Load custom centers from centers dashboard
+const CUSTOM_CENTERS_KEY = "ss_custom_centers_v4";
+function loadCustomCenters() {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_CENTERS_KEY) || "[]");
+    saved.forEach(c => {
+        if (!CENTERS.find(existing => existing.id === c.id)) {
+            CENTERS.push(c);
+            if (!CENTER_SLOTS[c.id]) {
+                CENTER_SLOTS[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: false }));
+            }
+        }
+    });
+}
+loadCustomCenters();
+saveSlots();
 
 function isRangeFree(centerId, startIdx, hours) {
     const slots = CENTER_SLOTS[centerId];
@@ -253,6 +292,9 @@ window.openBookingModal = function(centerId) {
                 <label><i class="fas fa-phone"></i> Phone Number</label>
                 <input class="modal-input" id="m-phone" type="tel" placeholder="07X XXX XXXX"/>
             </div>
+        </div>
+
+        <div class="modal-form-grid" style="margin-top: 1rem;">
             <div class="form-group">
                 <label><i class="fas fa-futbol"></i> Sport</label>
                 <select class="modal-input" id="m-sport">
@@ -260,9 +302,14 @@ window.openBookingModal = function(centerId) {
                 </select>
             </div>
             <div class="form-group">
-                <label><i class="fas fa-calendar"></i> Date</label>
+                <label><i class="fas fa-calendar-alt"></i> Date</label>
                 <input class="modal-input" id="m-date" type="date" min="${today}" value="${today}" onchange="updateSlotGrid()"/>
             </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 1.5rem;">
+            <label><i class="fas fa-user-clock"></i> Age</label>
+            <input class="modal-input" id="m-age" type="number" placeholder="Your age" min="1"/>
         </div>
 
         <div class="form-group" style="margin-top:1.5rem;">
@@ -389,12 +436,14 @@ window.updateSummary = function() {
 window.confirmBooking = async function() {
     const name    = document.getElementById("m-name").value.trim();
     const phone   = document.getElementById("m-phone").value.trim();
+    const age     = document.getElementById("m-age").value.trim();
     const sport   = document.getElementById("m-sport").value;
     const date    = document.getElementById("m-date").value;
     const players = document.getElementById("m-players").value;
 
     if (!name)                     { showToast("⚠️ Please enter your name"); return; }
     if (!phone)                    { showToast("⚠️ Please enter your phone number"); return; }
+    if (!age)                      { showToast("⚠️ Please enter your age"); return; }
     if (selectedStartIdx === null) { showToast("⚠️ Please select a start time"); return; }
     if (!/^0\d{9}$/.test(phone.replace(/\s/g, ""))) {
         showToast("⚠️ Enter a valid Sri Lankan number (e.g. 0771234567)"); return;
@@ -413,16 +462,116 @@ window.confirmBooking = async function() {
         emoji:        selectedCenter.emoji,
         sport, date, startTime, endTime,
         hours:        selectedHours,
-        name, phone, players,
+        name, phone, age, players,
         pricePerHour: selectedCenter.price,
         total,
         status:       "Confirmed",
         bookedAt:     new Date().toLocaleString()
     };
 
-    // Disable confirm button to prevent double-tap
-    const cb = document.getElementById("confirm-btn");
-    if (cb) { cb.disabled = true; cb.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Saving...`; }
+    // Instead of saving directly, open payment modal
+    openPaymentModal(booking);
+};
+
+window.openPaymentModal = function(booking) {
+    const modal = document.getElementById("payment-modal");
+    const content = document.getElementById("payment-content");
+    if (!modal || !content) return;
+
+    content.innerHTML = `
+        <div class="modal-header">
+            <h2><i class="fas fa-shield-alt"></i> Secure Payment</h2>
+            <p style="color: var(--text-secondary); font-size: 0.85rem;">Complete your transaction for <strong>${booking.center}</strong></p>
+        </div>
+
+        <div style="background: rgba(139, 92, 246, 0.05); padding: 15px; border-radius: 12px; margin: 20px 0; border: 1px solid rgba(139, 92, 246, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">Total to pay:</span>
+                <strong style="font-size: 1.2rem; color: white;">Rs. ${booking.total.toLocaleString()}</strong>
+            </div>
+        </div>
+
+        <div class="payment-methods">
+            <div class="payment-method active" onclick="this.parentElement.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active')); this.classList.add('active')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d6/Visa_2021.svg" alt="Visa" style="filter: brightness(0) invert(1);">
+            </div>
+            <div class="payment-method" onclick="this.parentElement.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active')); this.classList.add('active')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label style="font-size: 0.8rem; color: var(--text-secondary);">Card Number</label>
+            <input type="text" class="payment-card-input" placeholder="0000 0000 0000 0000" maxlength="19" oninput="this.value = this.value.replace(/\\D/g, '').replace(/(.{4})/g, '$1 ').trim()">
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 15px;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; color: var(--text-secondary);">Expiry Date</label>
+                <input type="text" class="payment-card-input" placeholder="MM / YY" maxlength="5">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.8rem; color: var(--text-secondary);">CVC</label>
+                <input type="password" class="payment-card-input" placeholder="***" maxlength="3">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" id="pay-btn" onclick="processMockPayment(${JSON.stringify(booking).replace(/"/g, '&quot;')})" style="width: 100%; margin-top: 25px; height: 50px;">
+            Pay Now (Rs. ${booking.total.toLocaleString()})
+        </button>
+
+        <button class="btn btn-outline" onclick="payLater(${JSON.stringify(booking).replace(/"/g, '&quot;')})" style="width: 100%; margin-top: 10px; height: 50px; font-size: 0.85rem; border-color: rgba(255,255,255,0.1);">
+            <i class="fas fa-clock"></i> Pay Later (at Venue)
+        </button>
+
+        <div class="payment-security">
+            <i class="fas fa-lock"></i> SSL Secured Transaction
+            <span style="margin: 0 5px;">|</span>
+            <i class="fas fa-check-circle"></i> PCI Compliant
+        </div>
+
+        <button onclick="document.getElementById('payment-modal').classList.remove('open')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.8rem; margin-top: 15px; width: 100%; cursor: pointer;">
+            Cancel & Go Back
+        </button>
+    `;
+
+    modal.classList.add("open");
+};
+
+window.processMockPayment = function(booking) {
+    const btn = document.getElementById("pay-btn");
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Verifying with bank...`;
+
+    // Simulate network delay
+    setTimeout(() => {
+        btn.innerHTML = `<i class="fas fa-check-circle"></i> Processing Success...`;
+        setTimeout(async () => {
+            document.getElementById("payment-modal").classList.remove("open");
+            booking.status = "Paid & Confirmed";
+            await finishBooking(booking);
+        }, 1000);
+    }, 2000);
+};
+
+window.payLater = async function(booking) {
+    document.getElementById("payment-modal").classList.remove("open");
+    
+    // Show the 7-day notification
+    showToast("📋 Booked! Please pay at the venue within 7 days.");
+    
+    booking.status = "Booked (Pay at Venue)";
+    await finishBooking(booking);
+};
+
+window.finishBooking = async function(booking) {
+    const ref = booking.id;
+    const sport = booking.sport;
+    const date = booking.date;
+    const startTime = booking.startTime;
+    const endTime = booking.endTime;
+    const players = booking.players;
+    const total = booking.total;
 
     myBookings.unshift(booking);
     await saveBookings(myBookings);
@@ -431,12 +580,17 @@ window.confirmBooking = async function() {
     for (let i = selectedStartIdx; i < selectedStartIdx + selectedHours; i++) {
         if (CENTER_SLOTS[selectedCenter.id][i]) CENTER_SLOTS[selectedCenter.id][i].taken = true;
     }
+    saveSlots();
 
     document.getElementById("modal-content").innerHTML = `
         <div class="booking-success">
             <div class="success-anim">🎉</div>
             <h2>Booking Confirmed!</h2>
             <p>Your court at <strong>${selectedCenter.name}</strong> is reserved.</p>
+            ${booking.status.includes('Pay at Venue') ? 
+                `<p style="color: #fbbf24; font-size: 0.9rem; margin-top: -0.5rem;"><i class="fas fa-info-circle"></i> Reminder: Settlement required within 7 days.</p>` : 
+                `<p style="color: #10b981; font-size: 0.9rem; margin-top: -0.5rem;"><i class="fas fa-check-double"></i> Payment received successfully.</p>`
+            }
             <div class="booking-ref-box">
                 <small>Reference Number</small>
                 <strong>${ref}</strong>
@@ -447,10 +601,14 @@ window.confirmBooking = async function() {
                 <div class="summary-row"><span>Time</span><span>${startTime} – ${endTime}</span></div>
                 <div class="summary-row"><span>Duration</span><span>${selectedHours} hour${selectedHours > 1 ? "s" : ""}</span></div>
                 <div class="summary-row"><span>Players</span><span>${players}</span></div>
-                <div class="summary-row total"><span>Total</span><span style="color:var(--accent-primary)">Rs. ${total.toLocaleString()}</span></div>
+                <div class="summary-row total"><span>Amount Due</span><span style="color:var(--accent-primary)">Rs. ${total.toLocaleString()}</span></div>
+                <div class="summary-row" style="border-top: 1px solid rgba(255,255,255,0.05); margin-top: 5px; padding-top: 5px;">
+                    <span>Status</span>
+                    <span style="color: ${booking.status.includes('Paid') ? '#10b981' : '#fbbf24'}">${booking.status}</span>
+                </div>
             </div>
             <div style="display:flex;gap:1rem;margin-top:2rem;justify-content:center;flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="closeBookingModal();renderMyBookings();document.getElementById('mybookings').scrollIntoView({behavior:'smooth'})">
+                <button class="btn btn-primary" onclick="closeBookingModal();renderMyBookings();showTab('bookings')">
                     <i class="fas fa-list"></i> View My Bookings
                 </button>
                 <button class="btn btn-outline" onclick="closeBookingModal();renderCenters();">
@@ -459,7 +617,7 @@ window.confirmBooking = async function() {
             </div>
         </div>`;
 
-    showToast("🎉 Booking saved!");
+    showToast("🎉 Booking & Payment saved!");
     renderCenters();
     renderMyBookings();
 };
@@ -490,40 +648,54 @@ window.renderMyBookings = function() {
             <div class="no-results">
                 <i class="fas fa-calendar-times" style="font-size:3rem;color:var(--accent-primary);margin-bottom:1rem;"></i>
                 <p>No bookings yet.</p>
-                <a href="#book" class="btn btn-primary" style="margin-top:1.5rem;display:inline-flex;">
+                <button onclick="showTab('explore')" class="btn btn-primary" style="margin-top:1.5rem;display:inline-flex; border:none; cursor:pointer;">
                     <i class="fas fa-bolt"></i> Book Your First Court
-                </a>
+                </button>
             </div>`;
         return;
     }
 
     container.innerHTML = myBookings.map(b => `
-        <div class="booking-item glass fade-up" id="bi-${b.id}">
-            <div class="booking-item-icon">${b.emoji}</div>
+        <div class="booking-item glass fade-up" id="bi-${b.id}" style="padding: 18px 25px; margin-bottom: 15px; display: block;">
             <div class="booking-item-info">
-                <h4>${b.center}</h4>
-                <p>
+                <h4 style="font-size: 1.6rem; margin-bottom: 12px; display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 2.5rem; background: rgba(255,255,255,0.05); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 14px;">${b.emoji}</span>
+                    ${b.center}
+                </h4>
+                <p style="font-size: 0.95rem; margin-bottom: 15px;">
                     <i class="fas fa-map-marker-alt"></i> ${b.location} &nbsp;·&nbsp;
                     <i class="fas fa-trophy"></i> ${b.sport} &nbsp;·&nbsp;
                     <i class="fas fa-calendar"></i> ${b.date}
                 </p>
-                <p style="margin-top:0.4rem;">
-                    <i class="fas fa-clock"></i> ${b.startTime} – ${b.endTime} &nbsp;·&nbsp;
-                    <i class="fas fa-hourglass-half"></i> ${b.hours}h &nbsp;·&nbsp;
-                    <i class="fas fa-users"></i> ${b.players} players
-                </p>
-                <p style="margin-top:0.4rem;">
-                    <i class="fas fa-user"></i> ${b.name} &nbsp;·&nbsp;
-                    <i class="fas fa-phone"></i> ${b.phone} &nbsp;·&nbsp;
-                    <i class="fas fa-tag"></i> Rs. ${b.total.toLocaleString()}
-                </p>
-                <div style="margin-top:0.8rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                    <span class="booking-ref-tag">REF: ${b.id}</span>
-                    <span class="booking-status-badge">✓ ${b.status}</span>
-                    <span style="font-size:0.68rem;color:var(--text-secondary);">Booked: ${b.bookedAt}</span>
+                <div style="margin-top:0.8rem; font-size: 0.9rem; color: var(--text-secondary); background: rgba(255,255,255,0.03); padding: 12px 18px; border-radius: 12px; display: inline-flex; gap: 15px; flex-wrap: wrap;">
+                    <span><i class="fas fa-clock" style="color: var(--accent-primary);"></i> ${b.startTime} – ${b.endTime}</span>
+                    <span><i class="fas fa-user" style="color: var(--accent-primary);"></i> ${b.name}</span>
+                    <strong style="color: white;"><i class="fas fa-tag" style="color: var(--accent-primary);"></i> Rs. ${b.total.toLocaleString()}</strong>
+                </div>
+                
+                <!-- Rating UI -->
+                <div class="booking-rating-box" style="margin-top: 1.5rem;">
+                    <span style="font-size: 0.85rem; margin-right: 12px;">Rate your experience:</span>
+                    <div class="stars-input" data-bid="${b.id}" style="font-size: 1.2rem;">
+                        ${[1,2,3,4,5].map(num => `
+                            <i class="${b.userRating >= num ? 'fas' : 'far'} fa-star" 
+                               onclick="setRating('${b.id}', ${num})" 
+                               style="cursor:pointer; color: ${b.userRating >= num ? '#f59e0b' : 'var(--text-secondary)'}; margin-right: 5px;"></i>
+                        `).join("")}
+                    </div>
+                </div>
+
+                <div style="margin-top:1.5rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+                    <span class="booking-ref-tag" style="padding: 6px 12px; font-size: 0.8rem;">REF: ${b.id}</span>
+                    <span class="booking-status-badge" style="padding: 6px 15px; font-size: 0.8rem; background: ${b.status.includes('Paid') ? 'rgba(34,197,94,0.15)' : 'rgba(251,146,60,0.15)'}; color: ${b.status.includes('Paid') ? '#22c55e' : '#fbbf24'}; border-color: ${b.status.includes('Paid') ? 'rgba(34,197,94,0.3)' : 'rgba(251,146,60,0.3)'}">
+                        ${b.status.includes('Paid') ? '✓' : '🕒'} ${b.status}
+                    </span>
+                    <button class="btn btn-outline" style="padding: 8px 18px; font-size: 0.85rem; border-color: var(--accent-primary); color: white;" onclick="downloadReceipt('${b.id}')">
+                        <i class="fas fa-file-pdf" style="color: #ef4444; margin-right: 8px;"></i> Download Receipt (PDF)
+                    </button>
                 </div>
             </div>
-            <button class="cancel-booking-btn" onclick="cancelBooking('${b.id}')">
+            <button class="cancel-booking-btn" onclick="cancelBooking('${b.id}')" style="padding: 10px 20px; font-size: 0.85rem;">
                 <i class="fas fa-times"></i> Cancel
             </button>
         </div>`).join("");
@@ -550,6 +722,160 @@ window.showToast = function(msg) {
 // ══════════════════════════════════════════
 // INIT — load bookings then render
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// RATING & PDF UTILS
+// ══════════════════════════════════════════
+window.setRating = async function(bookingId, starCount) {
+    const booking = myBookings.find(b => b.id === bookingId);
+    if (!booking) return;
+    
+    booking.userRating = starCount;
+    await saveBookings(myBookings);
+    renderMyBookings();
+    showToast(`⭐ Rated ${starCount} stars!`);
+};
+
+window.downloadReceipt = function(bookingId) {
+    const b = myBookings.find(bk => bk.id === bookingId);
+    if (!b) return;
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // --- Premium Letterhead Header ---
+        doc.setFillColor(5, 7, 10); // Darker background for header
+        doc.rect(0, 0, 210, 50, 'F');
+        
+        // Accent bar at top
+        doc.setFillColor(139, 92, 246); // Accent primary
+        doc.rect(0, 0, 210, 3, 'F');
+
+        // Logo text
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(26);
+        doc.text("SPORTSPHERE", 20, 25);
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(148, 163, 184); // text-secondary logic
+        doc.text("ELITE SPORTS VENUE NETWORK", 20, 32);
+
+        // Receipt Label
+        doc.setFillColor(139, 92, 246);
+        doc.rect(140, 18, 50, 12, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("OFFICIAL RECEIPT", 165, 25.5, { align: "center" });
+
+        // --- Info Section ---
+        doc.setTextColor(15, 23, 42); // Dark text
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text("BILL TO:", 20, 65);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(b.name.toUpperCase(), 20, 72);
+        
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Email: ${b.userEmail || "Customer"}`, 20, 78);
+        doc.text(`Phone: ${b.phone}`, 20, 83);
+
+        // Date & Ref on right
+        doc.setTextColor(15, 23, 42);
+        doc.text("RECEIPT DETAILS:", 140, 65);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(`No: #${b.id}`, 140, 72);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Issued: ${b.bookedAt}`, 140, 77);
+        doc.text(`Status: ${b.status.toUpperCase()}`, 140, 82);
+
+        // --- Table Headers ---
+        doc.setFillColor(248, 250, 252);
+        doc.rect(20, 95, 170, 10, 'F');
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(51, 65, 85);
+        doc.text("DESCRIPTION", 25, 101.5);
+        doc.text("DETAILS", 70, 101.5);
+        doc.text("DURATION", 135, 101.5);
+        doc.text("SUBTOTAL", 170, 101.5);
+
+        // --- Table Content ---
+        let y = 112;
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        
+        const rows = [
+            ["Venue", b.center, "-", ""],
+            ["Sport", b.sport, "-", ""],
+            ["Date", b.date, "-", ""],
+            ["Time Slot", `${b.startTime} - ${b.endTime}`, `${b.hours} hr(s)`, `Rs. ${b.total.toLocaleString()}`]
+        ];
+
+        rows.forEach((row, index) => {
+            doc.setTextColor(100, 100, 100);
+            doc.setFont("helvetica", "bold");
+            doc.text(row[0], 25, y);
+            
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "normal");
+            doc.text(row[1], 70, y);
+            doc.text(row[2], 135, y);
+            
+            if (row[3]) {
+                doc.setFont("helvetica", "bold");
+                doc.text(row[3], 170, y);
+            }
+
+            // Draw a subtle line after each row except the last
+            doc.setDrawColor(241, 245, 249);
+            doc.setLineWidth(0.2);
+            doc.line(20, y + 4, 190, y + 4);
+            
+            y += 12;
+        });
+
+        y += 5;
+
+        // --- Grand Total ---
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("TOTAL PAID", 120, y);
+        doc.setTextColor(139, 92, 246);
+        doc.setFontSize(18);
+        doc.text(`Rs. ${b.total.toLocaleString()}`, 190, y, { align: "right" });
+
+        // --- Footer Message ---
+        y = 260;
+        doc.setDrawColor(139, 92, 246);
+        doc.setLineWidth(1);
+        doc.line(20, y, 60, y);
+        
+        y += 10;
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("SportSphere Management", 20, y);
+        
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(150, 150, 150);
+        doc.text("This receipt is computer generated and valid only upon verification at the sports center.", 105, 285, { align: "center" });
+
+        doc.save(`SportSphere_Receipt_${b.id}.pdf`);
+        showToast("📄 Professional Receipt downloaded!");
+    } catch (err) {
+        console.error("PDF Generate Error:", err);
+        showToast("❌ Could not generate PDF.");
+    }
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
     myBookings = await loadBookings();
     renderCenters();

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SportSphere | Book Your Game</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -17,25 +18,24 @@
         </div>
         <div class="nav-links">
             <a href="#home">Home</a>
-            <a href="#book">Book a Court</a>
             <a href="#about">About</a>
-            <a href="#services">Services</a>
-            <a href="#programs">Programs</a>
-            <a href="#calculator">ROI Calc</a>
             <a href="#pricing">Pricing</a>
             <a href="#contact">Contact</a>
         </div>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <button class="theme-toggle" id="theme-toggle" title="Toggle Theme">
+        <div class="nav-actions" style="display: flex; gap: 0.8rem; align-items: center;">
+            <button class="theme-toggle" id="theme-toggle" title="Toggle Theme" style="margin-right: 0.5rem;">
                 <i class="fas fa-sun"></i>
             </button>
-            <a href="auth.html" class="btn btn-primary" style="padding: 10px 25px; font-size: 0.85rem;">Member Portal</a>
+            <div class="dash-btns" style="display: flex; gap: 0.5rem;">
+                <a href="center-auth.html" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.7rem; white-space: nowrap;">Center Portal</a>
+                <a href="user-auth.html" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.7rem; white-space: nowrap;">User Portal</a>
+            </div>
         </div>
     </nav>
 
     <main>
         <!-- Hero Section -->
-        <section class="hero">
+        <section class="hero" onclick="nextSlideManual()" style="cursor: pointer;">
             <div class="hero-bg-container">
                 <div class="hero-bg active"
                     style="background-image: url('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=75&w=1920&auto=format')">
@@ -47,87 +47,32 @@
                     style="background-image: url('https://images.unsplash.com/photo-1511067007398-7e4b90cfa4bc?q=75&w=1920&auto=format')">
                 </div>
                 <div class="hero-bg"
-                    style="background-image: url('https://images.unsplash.com/photo-1624891182453-91187498322c?q=75&w=1920&auto=format')">
+                    style="background-image: url('https://images.unsplash.com/photo-1531415074968-036ba1b575da?q=80&w=1920&auto=format')">
                 </div>
                 <div class="hero-bg"
                     style="background-image: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=75&w=1920&auto=format')">
                 </div>
             </div>
             <div class="hero-overlay"></div>
-            <button class="slider-arrow arrow-left" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></button>
-            <button class="slider-arrow arrow-right" onclick="nextSlideManual()"><i class="fas fa-chevron-right"></i></button>
+            
             <div class="hero-content">
-                <h1 class="fade-up">SPORTSPHERE <br> <span class="glow">BOOK YOUR GAME</span></h1>
+                <h1 class="fade-up" style="display: flex; flex-direction: column; align-items: center;">
+                    <span class="hero-brand">SportSphere Elite</span>
+                    <span class="hero-main">Book Your <span class="highlight">Game</span></span>
+                </h1>
                 <p class="fade-up" style="transition-delay: 0.2s;">
                     Find and book world-class sports courts across Sri Lanka. Instant confirmation, zero hassle.
                 </p>
                 <div class="hero-actions fade-up"
-                    style="transition-delay: 0.4s; display: flex; gap: 1.5rem; justify-content: center;">
-                    <a href="#book" class="btn btn-primary"><i class="fas fa-bolt"></i> Book a Court Now</a>
-                    <a href="#mybookings" class="btn btn-outline"><i class="fas fa-list"></i> My Bookings</a>
+                    style="transition-delay: 0.4s; display: flex; gap: 1.5rem; justify-content: center;"
+                    onclick="event.stopPropagation()">
+                    <a href="user-auth.html" class="btn btn-primary"><i class="fas fa-bolt"></i> Explore Venues Now</a>
                 </div>
             </div>
             <div class="slider-dots"></div>
         </section>
 
-        <!-- ══════════════════════════════════════════
-             CUSTOMER BOOKING SECTION
-        ══════════════════════════════════════════ -->
-        <section id="book" style="background: var(--bg-secondary);">
-            <div class="section-header fade-up">
-                <h2>Book a Court</h2>
-                <p style="color: var(--text-secondary);">Find the perfect sports center near you and secure your slot instantly.</p>
-            </div>
 
-            <!-- Sport Filter -->
-            <div class="sport-filter-row fade-up">
-                <button class="sport-pill active" onclick="filterSport('All', this)">🏟️ All Sports</button>
-                <button class="sport-pill" onclick="filterSport('Cricket', this)">🏏 Cricket</button>
-                <button class="sport-pill" onclick="filterSport('Football', this)">⚽ Football</button>
-                <button class="sport-pill" onclick="filterSport('Futsal', this)">🥅 Futsal</button>
-                <button class="sport-pill" onclick="filterSport('Badminton', this)">🏸 Badminton</button>
-                <button class="sport-pill" onclick="filterSport('Swimming', this)">🏊 Swimming</button>
-                <button class="sport-pill" onclick="filterSport('Tennis', this)">🎾 Tennis</button>
-                <button class="sport-pill" onclick="filterSport('Padel', this)">🎾 Padel</button>
-                <button class="sport-pill" onclick="filterSport('Pickleball', this)">🏓 Pickleball</button>
-                <button class="sport-pill" onclick="filterSport('Basketball', this)">🏀 Basketball</button>
-                <button class="sport-pill" onclick="filterSport('Volleyball', this)">🏐 Volleyball</button>
-                <button class="sport-pill" onclick="filterSport('Rugby', this)">🏉 Rugby</button>
-                <button class="sport-pill" onclick="filterSport('Table Tennis', this)">🏓 Table Tennis</button>
-                <button class="sport-pill" onclick="filterSport('Squash', this)">🎾 Squash</button>
-            </div>
-
-            <!-- Indoor / Outdoor Filter -->
-            <div class="sport-filter-row fade-up" style="margin-top:-1rem;">
-                <button class="indoor-pill active" onclick="filterIndoor('All', this)">🌐 All Venues</button>
-                <button class="indoor-pill" onclick="filterIndoor('Indoor', this)"><i class="fas fa-warehouse"></i> Indoor Only</button>
-                <button class="indoor-pill" onclick="filterIndoor('Outdoor', this)"><i class="fas fa-sun"></i> Outdoor Only</button>
-            </div>
-
-            <!-- Search + City Filter -->
-            <div class="booking-filters fade-up">
-                <div class="booking-search-wrap">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="center-search" placeholder="Search centers or cities…" oninput="renderCenters()"/>
-                </div>
-                <select id="city-filter" class="booking-select" onchange="renderCenters()">
-                    <option value="">All Cities</option>
-                    <option>Colombo</option>
-                    <option>Kandy</option>
-                    <option>Galle</option>
-                    <option>Jaffna</option>
-                    <option>Negombo</option>
-                    <option>Kurunegala</option>
-                    <option>Anuradhapura</option>
-                    <option>Ratnapura</option>
-                    <option>Matara</option>
-                    <option>Trincomalee</option>
-                </select>
-            </div>
-
-            <!-- Centers Grid -->
-            <div class="centers-grid" id="centers-grid"></div>
-        </section>
 
         <!-- GROUNDS MAP SECTION -->
         <section id="grounds-map" style="background: var(--bg-primary);">
@@ -147,15 +92,6 @@
                     referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
             </div>
-        </section>
-
-        <!-- MY BOOKINGS Section -->
-        <section id="mybookings">
-            <div class="section-header fade-up">
-                <h2>My Bookings</h2>
-                <p style="color: var(--text-secondary);">Track and manage your upcoming reservations.</p>
-            </div>
-            <div id="my-bookings-list" class="my-bookings-list fade-up"></div>
         </section>
 
         <!-- About -->
@@ -216,7 +152,7 @@
             </div>
             <div class="grid-features">
                 <div class="glass" style="border-radius: 30px; overflow: hidden;">
-                    <div style="height: 200px; background: url('https://images.unsplash.com/photo-1526676037777-05a232554f77?auto=format&fit=crop&q=80&w=400') center/cover;"></div>
+                    <div style="height: 200px; background: url('https://images.unsplash.com/photo-1519315901367-f34ff9154487?auto=format&fit=crop&q=80&w=800') center/cover;"></div>
                     <div style="padding: 2.5rem;">
                         <h4>Youth Excellence</h4>
                         <p style="color: var(--text-secondary); margin: 1rem 0; font-size: 0.9rem;">Grassroots development for ages 8-16 with certified elite coaches.</p>
@@ -229,36 +165,6 @@
                         <h4>Pro Intensive</h4>
                         <p style="color: var(--text-secondary); margin: 1rem 0; font-size: 0.9rem;">Advanced performance training for high-level competitive athletes.</p>
                         <a href="#" style="color: var(--accent-primary); font-weight: 600;">View Slots &rarr;</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="calculator">
-            <div class="section-header fade-up">
-                <h2>Revenue Forecaster</h2>
-                <p>Calculate your arena's potential annual yield.</p>
-            </div>
-            <div class="glass" style="max-width: 800px; margin: 0 auto; padding: 4rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
-                    <div>
-                        <div class="form-group">
-                            <label>Number of Courts</label>
-                            <input type="number" id="courts" value="4" oninput="calculateROI()">
-                        </div>
-                        <div class="form-group">
-                            <label>Avg. Price/Hour (LKR)</label>
-                            <input type="number" id="price" value="2500" oninput="calculateROI()">
-                        </div>
-                        <div class="form-group">
-                            <label>Hours Open/Day</label>
-                            <input type="number" id="hours" value="12" oninput="calculateROI()">
-                        </div>
-                    </div>
-                    <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; background: rgba(139, 92, 246, 0.05); border-radius: 20px; padding: 2rem; border: 1px solid var(--accent-primary);">
-                        <p style="text-transform: uppercase; font-size: 0.8rem; color: var(--accent-primary); letter-spacing: 2px;">Potential Annual Yield</p>
-                        <h2 id="roi-result" style="font-size: 2.5rem; margin: 1rem 0;">LKR 43.8M</h2>
-                        <p style="font-size: 0.7rem; color: var(--text-secondary);">*Based on 100% occupancy model</p>
                     </div>
                 </div>
             </div>
@@ -279,7 +185,7 @@
                         <li><i class="fas fa-check"></i> Member Profiles</li>
                         <li style="opacity: 0.5;"><i class="fas fa-times"></i> AI Yield Analytics</li>
                     </ul>
-                    <a href="auth.html" class="btn btn-outline" style="width: 100%;">Initialize Suite</a>
+                    <a href="center-auth.html?plan=base" class="btn btn-outline" style="width: 100%;">Initialize Suite</a>
                 </div>
                 <div class="glass price-card featured fade-up" style="transition-delay: 0.1s;">
                     <div style="position: absolute; top: 20px; right: -30px; background: var(--accent-primary); color: white; padding: 5px 40px; transform: rotate(45deg); font-size: 0.7rem; font-weight: 800;">MOST POPULAR</div>
@@ -291,7 +197,7 @@
                         <li><i class="fas fa-check"></i> Revenue Forecasts</li>
                         <li><i class="fas fa-check"></i> White-label Portal</li>
                     </ul>
-                    <a href="auth.html" class="btn btn-primary" style="width: 100%;">Go Elite</a>
+                    <a href="center-auth.html?plan=elite" class="btn btn-primary" style="width: 100%;">Go Elite</a>
                 </div>
                 <div class="glass price-card fade-up" style="transition-delay: 0.2s;">
                     <h3>Institutional</h3>
@@ -302,7 +208,7 @@
                         <li><i class="fas fa-check"></i> Priority Node Support</li>
                         <li><i class="fas fa-check"></i> Custom AI Models</li>
                     </ul>
-                    <a href="auth.html" class="btn btn-outline" style="width: 100%;">Contact Enterprise</a>
+                    <a href="center-auth.html?plan=institutional" class="btn btn-outline" style="width: 100%;">Contact Enterprise</a>
                 </div>
             </div>
         </section>
@@ -373,16 +279,16 @@
                 <div class="footer-col">
                     <h4>For Players</h4>
                     <ul>
-                        <li><a href="#book">Browse Centers</a></li>
-                        <li><a href="#mybookings">My Bookings</a></li>
+                        <li><a href="user-dashboard.html">Browse Centers</a></li>
+                        <li><a href="user-auth.html">User Portal</a></li>
                         <li><a href="#programs">Programs</a></li>
                     </ul>
                 </div>
                 <div class="footer-col">
                     <h4>For Venues</h4>
                     <ul>
-                        <li><a href="auth.html">Member Portal</a></li>
-                        <li><a href="dashboard.html">Host Dashboard</a></li>
+                        <li><a href="center-auth.html">Center Portal</a></li>
+                        <li><a href="center-dashboard.html">Center Dashboard</a></li>
                         <li><a href="#contact">Support</a></li>
                     </ul>
                 </div>
@@ -416,5 +322,46 @@
 
     <script src="js/main.js"></script>
     <script src="js/booking.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ONE_HOUR = 60 * 60 * 1000;
+            
+            // Check User Session
+            const rawUser = localStorage.getItem('user_data');
+            if (rawUser) {
+                const userData = JSON.parse(rawUser);
+                if (userData.loginTime && (Date.now() - userData.loginTime < ONE_HOUR)) {
+                    const userBtn = document.querySelector('a[href="user-auth.html"]');
+                    if (userBtn) {
+                        userBtn.innerText = 'User Dashboard';
+                        userBtn.href = 'user-dashboard.html';
+                    }
+                    // Hero button too
+                    const heroBtn = document.querySelector('.hero-actions a[href="user-auth.html"]');
+                    if (heroBtn) {
+                        heroBtn.innerHTML = '<i class="fas fa-th-large"></i> Go to Dashboard';
+                        heroBtn.href = 'user-dashboard.html';
+                    }
+                } else {
+                    localStorage.removeItem('user_data');
+                }
+            }
+
+            // Check Center Session
+            const rawCenter = localStorage.getItem('center_data');
+            if (rawCenter) {
+                const centerData = JSON.parse(rawCenter);
+                if (centerData.loginTime && (Date.now() - centerData.loginTime < ONE_HOUR)) {
+                    const centerBtn = document.querySelector('a[href="center-auth.html"]');
+                    if (centerBtn) {
+                        centerBtn.innerText = 'Center Dashboard';
+                        centerBtn.href = 'center-dashboard.html';
+                    }
+                } else {
+                    localStorage.removeItem('center_data');
+                }
+            }
+        });
+    </script>
 </body>
 </html>

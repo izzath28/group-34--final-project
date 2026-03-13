@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Portal | SportSphere</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at 0% 0%, #1a103c 0%, #05070a 100%);
+        }
+        .auth-container {
+            width: 100%;
+            max-width: 600px; /* Increased from 450px */
+            padding: 2rem;
+            z-index: 10;
+        }
+        .auth-card {
+            padding: 2rem; /* Reduced from 3rem */
+            text-align: center;
+        }
+        .auth-header {
+            margin-bottom: 1.5rem; /* Reduced from 2.5rem */
+        }
+        .auth-header i {
+            font-size: 3rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 15px var(--accent-glow));
+        }
+        .auth-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .auth-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 12px;
+            margin-bottom: 1.2rem; /* Reduced from 2rem */
+            border: 1px solid var(--glass-border);
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .auth-tab.active {
+            background: var(--accent-primary);
+            color: white;
+        }
+        .form-group {
+            margin-bottom: 0.8rem; /* Reduced from 1.5rem */
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.6rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-primary);
+            opacity: 0.7;
+        }
+        .input-wrap input {
+            width: 100%;
+            padding: 11px 15px 11px 45px; /* Reduced padding */
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            outline: none;
+            transition: var(--transition);
+        }
+        .input-wrap input:focus {
+            border-color: var(--accent-primary);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+        }
+        .auth-btn {
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .toggle-text {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .toggle-text span {
+            color: var(--accent-primary);
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1rem 0; /* Reduced from 1.5rem */
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .divider:not(:empty)::before { margin-right: .5em; }
+        .divider:not(:empty)::after { margin-left: .5em; }
+        .google-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: white;
+            color: #333;
+            border-radius: 12px;
+            padding: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+        .google-btn:hover {
+            background: #f1f1f1;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .google-btn img {
+            width: 18px;
+        }
+        .back-home {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .back-home:hover {
+            color: white;
+            transform: translateX(-5px);
+        }
+        #signup-form {
+            display: none;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script type="module" src="js/firebase-config.js"></script>
+</head>
+<body>
+    <a href="index.html" class="back-home"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+    <div class="auth-container">
+        <div class="glass auth-card">
+            <div class="auth-header">
+                <i class="fas fa-user-circle"></i>
+                <h1>User Portal</h1>
+                <p>Access your bookings and exclusive offers.</p>
+            </div>
+
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="showForm('login')">Login</div>
+                <div class="auth-tab" onclick="showForm('signup')">Sign Up</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleAuth(event, 'login')">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="login-email" placeholder="name@example.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn">Secure Login</button>
+                
+                <div class="divider">OR</div>
+                
+                <button type="button" class="google-btn" onclick="handleGoogleSignIn()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                    Continue with Google
+                </button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signup-form" onsubmit="handleAuth(event, 'signup')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="signup-name" placeholder="John Doe" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="signup-email" placeholder="name@example.com" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="signup-password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn">Create Account</button>
+                
+                <div class="divider">OR</div>
+                
+                <button type="button" class="google-btn" onclick="handleGoogleSignIn()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                    Sign up with Google
+                </button>
+            </form>
+
+            <div class="toggle-text">
+                <p id="auth-toggle-msg">Don't have an account? <span onclick="showForm('signup')">Sign Up</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast message -->
+    <div id="toast-msg" class="toast-msg"></div>
+
+    <script>
+        // Check for existing session
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawData = localStorage.getItem('user_data');
+            if (rawData) {
+                const userData = JSON.parse(rawData);
+                const ONE_HOUR = 60 * 60 * 1000;
+                if (Date.now() - userData.loginTime < ONE_HOUR) {
+                    window.location.href = 'user-dashboard.html';
+                } else {
+                    localStorage.removeItem('user_data');
+                }
+            }
+        });
+
+        function showForm(type) {
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const tabs = document.querySelectorAll('.auth-tab');
+            const toggleMsg = document.getElementById('auth-toggle-msg');
+
+            if (type === 'login') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+                toggleMsg.innerHTML = "Don't have an account? <span onclick=\"showForm('signup')\">Sign Up</span>";
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                tabs[1].classList.add('active');
+                tabs[0].classList.remove('active');
+                toggleMsg.innerHTML = "Already have an account? <span onclick=\"showForm('login')\">Login</span>";
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function handleAuth(event, type) {
+            event.preventDefault();
+            
+            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
+                showToast("⚠️ Local Demo Mode: Configure Firebase for real Auth.");
+                // Fallback demo login
+                const name = type === 'signup' ? document.getElementById('signup-name').value : 'User';
+                localStorage.setItem('user_data', JSON.stringify({ 
+                    name, 
+                    email: 'demo@user.com', 
+                    type: 'user',
+                    loginTime: Date.now() 
+                }));
+                setTimeout(() => window.location.href = 'user-dashboard.html', 1000);
+                return;
+            }
+
+            const { auth, methods } = window.SS_FB;
+            const email = type === 'login' ? document.getElementById('login-email').value : document.getElementById('signup-email').value;
+            const password = type === 'login' ? document.getElementById('login-password').value : document.getElementById('signup-password').value;
+
+            try {
+                showToast('Authentication in progress...');
+                if (type === 'signup') {
+                    await methods.createUserWithEmailAndPassword(auth, email, password);
+                    showToast('Account Created! Redirecting...');
+                } else {
+                    await methods.signInWithEmailAndPassword(auth, email, password);
+                    showToast('Welcome back! Redirecting...');
+                }
+                const user = auth.currentUser;
+                localStorage.setItem('user_data', JSON.stringify({ 
+                    name: user.displayName || 'User', 
+                    email: user.email, 
+                    type: 'user',
+                    loginTime: Date.now() 
+                }));
+                setTimeout(() => window.location.href = 'user-dashboard.html', 1500);
+            } catch (error) {
+                console.error("Auth Error:", error);
+                showToast(`❌ ${error.message}`);
+            }
+        }
+
+        async function handleGoogleSignIn() {
+            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
+                showToast("⚠️ Local Demo Mode: Google Sign-in requires Firebase Setup.");
+                localStorage.setItem('user_data', JSON.stringify({ 
+                    name: 'Chirana', 
+                    email: 'chirana@gmail.com', 
+                    type: 'user',
+                    loginTime: Date.now() 
+                }));
+                setTimeout(() => window.location.href = 'user-dashboard.html', 1000);
+                return;
+            }
+
+            const { auth, googleProvider, methods } = window.SS_FB;
+            try {
+                showToast('Connecting to Google...');
+                await methods.signInWithPopup(auth, googleProvider);
+                showToast('Google Sign-in Successful!');
+                const user = auth.currentUser;
+                localStorage.setItem('user_data', JSON.stringify({ 
+                    name: user.displayName || 'User', 
+                    email: user.email, 
+                    type: 'user',
+                    loginTime: Date.now() 
+                }));
+                setTimeout(() => window.location.href = 'user-dashboard.html', 1500);
+            } catch (error) {
+                console.error("Google Auth Error:", error);
+                showToast(`❌ Login failed: ${error.message}`);
+            }
+        }
+
+        // Add scrolled class to theme toggle if needed (using existing system)
+        document.addEventListener('DOMContentLoaded', () => {
+             // Theme toggle logic (minified version of main.js if needed or just use current)
+             const themeToggle = document.getElementById('theme-toggle');
+             // ... usually handled by main.js
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Center Dashboard | SportSphere</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" src="js/firebase-config.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 280px;
+        }
+        body {
+            background: var(--bg-primary);
+        }
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--glass-border);
+            padding: 2.5rem;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 3rem 5%;
+        }
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 3rem;
+            color: white;
+            text-transform: uppercase;
+        }
+        .sidebar-logo i {
+            color: #0ea5e9;
+        }
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(14, 165, 233, 0.1);
+            color: white;
+        }
+        .nav-item.active {
+            color: #0ea5e9;
+        }
+        .logout-btn {
+            margin-top: auto;
+            color: #ef4444;
+        }
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .stat-card {
+            padding: 2rem;
+            border-radius: 20px;
+        }
+        .stat-card i {
+            font-size: 1.5rem;
+            color: #0ea5e9;
+            margin-bottom: 1rem;
+        }
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        .stat-card p {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .section-box {
+            margin-bottom: 3rem;
+        }
+        .section-box h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .center-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 992px) {
+            .sidebar { width: 80px; padding: 2rem 1rem; align-items: center; }
+            .sidebar-logo span, .nav-item span { display: none; }
+            .main-content { margin-left: 80px; }
+            .center-form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="index.html" class="sidebar-logo" style="text-decoration: none;">
+                <i class="fas fa-basketball-ball"></i>
+                <span>SportSphere</span>
+            </a>
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="showTab('overview')">
+                    <i class="fas fa-th-large"></i>
+                    <span>Overview</span>
+                </div>
+                <div class="nav-item" onclick="showTab('subscription')">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Subscription</span>
+                </div>
+                <div class="nav-item" onclick="showTab('my-center')">
+                    <i class="fas fa-university"></i>
+                    <span>My Center</span>
+                </div>
+                <div class="nav-item" onclick="showTab('bookings')">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>My Reservations</span>
+                </div>
+
+                <!-- Logout -->
+                <div class="nav-item logout-btn" style="margin-top: 2rem;" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="position: relative;">
+            <div style="position: absolute; top: 3rem; right: 5%; z-index: 10;">
+                <a href="index.html" class="btn btn-outline" style="padding: 10px 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-arrow-left"></i> Back to Main Site
+                </a>
+            </div>
+
+            <div id="overview-tab">
+                <div style="margin-bottom: 2.5rem;">
+                    <h1 id="welcome-msg">Welcome, Arena Owner</h1>
+                    <p style="color: var(--text-secondary);">Here's what's happening at your center today.</p>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="glass stat-card">
+                        <i class="fas fa-calendar-day"></i>
+                        <h3>Today's Bookings</h3>
+                        <p id="stat-bookings">12</p>
+                    </div>
+                    <div class="glass stat-card">
+                        <i class="fas fa-coins"></i>
+                        <h3>Total Revenue</h3>
+                        <p id="stat-revenue">Rs. 45,000</p>
+                    </div>
+                    <div class="glass stat-card">
+                        <i class="fas fa-users"></i>
+                        <h3>Unique Users</h3>
+                        <p id="stat-users">84</p>
+                    </div>
+                </div>
+
+                <div class="section-box">
+                    <h2>Recent Activity</h2>
+                    <div id="recent-bookings-list">
+                        <!-- Bookings will be rendered here -->
+                         <div class="glass" style="padding: 1.5rem; color: var(--text-secondary); text-align: center;">
+                            No recent bookings to show.
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="subscription-tab" style="display: none;">
+                <div style="margin-bottom: 2.5rem;">
+                    <h1>Subscription Management</h1>
+                    <p style="color: var(--text-secondary);">Manage your center's Elite Pro or Institutional plan.</p>
+                </div>
+                
+                <div class="glass" style="padding: 2.5rem; border-radius: 24px; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.02);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <div>
+                            <h3 id="current-plan-name" style="font-size: 1.8rem; color: white;">Base Utility</h3>
+                            <p id="current-plan-status" style="color: #fbbf24; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; margin-top: 5px;">Payment Pending</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span id="current-plan-price" style="font-size: 1.5rem; font-weight: 800; color: var(--accent-primary);">LKR 15,000</span>
+                            <p style="color: var(--text-secondary);">per month</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; margin-bottom: 2rem;">
+                        <ul id="plan-features-list" style="list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <!-- Features will be injected -->
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="manage-pay-btn" onclick="openPaymentModal()" style="width: 100%; padding: 18px;">
+                        <i class="fas fa-lock"></i> Process Premium Activation
+                    </button>
+                    <p id="pay-later-note" style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 15px; display: none;">
+                        <i class="fas fa-info-circle"></i> Pay Later active. Please complete payment within 7 days to avoid service interruption.
+                    </p>
+                </div>
+            </div>
+
+            <div id="my-center-tab" style="display: none;">
+                <div style="margin-bottom: 2.5rem;">
+                    <h1>Center Settings</h1>
+                    <p style="color: var(--text-secondary);">Update your center details and pricing.</p>
+                </div>
+
+                <div class="glass" style="padding: 2.5rem;">
+                    <form id="center-details-form" onsubmit="saveCenterDetails(event)">
+                        <div class="center-form-grid">
+                            <div class="form-group">
+                                <label>Center Name (Select or Type New)</label>
+                                <input type="text" id="c-name" class="modal-input" list="center-suggestions" placeholder="Search or Enter Venue Name" required onchange="autoPopulateCenter(this.value)">
+                                <datalist id="center-suggestions">
+                                    <!-- Populated via JS -->
+                                </datalist>
+                            </div>
+                            <div class="form-group">
+                                <label>City</label>
+                                <select id="c-city" class="modal-input">
+                                    <option>Colombo</option>
+                                    <option>Kandy</option>
+                                    <option>Galle</option>
+                                    <option>Jaffna</option>
+                                    <option>Negombo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Full Address</label>
+                                <input type="text" id="c-location" class="modal-input" placeholder="e.g. 123 Main St, Kandy" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Price per Hour (LKR)</label>
+                                <input type="number" id="c-price" class="modal-input" placeholder="e.g. 5000" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Opening Time</label>
+                                <input type="time" id="c-open" class="modal-input" value="06:00">
+                            </div>
+                            <div class="form-group">
+                                <label>Closing Time</label>
+                                <input type="time" id="c-close" class="modal-input" value="22:00">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 1.5rem;">
+                            <label>Description & Features</label>
+                            <textarea id="c-desc" class="modal-input" style="height: 100px;" placeholder="Describe your center..."></textarea>
+                        </div>
+                        <div class="form-group" style="margin-top: 1.5rem;">
+                            <label>Venue Header Image</label>
+                            <div class="glass" style="padding: 1.5rem; text-align: center; border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px;">
+                                <input type="file" id="c-img-upload" accept="image/*" style="display: none;" onchange="previewVenueImage(event)">
+                                <div id="img-preview-box" style="margin-bottom: 1rem; display: none;">
+                                    <img id="c-img-preview" src="" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
+                                </div>
+                                <button type="button" class="btn btn-outline" onclick="document.getElementById('c-img-upload').click()">
+                                    <i class="fas fa-image"></i> Select Venue Photo
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" id="save-center-btn" class="btn btn-primary" style="margin-top: 2rem;">Save Changes & Go Live</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="bookings-tab" style="display: none;">
+                <h1>All Reservations</h1>
+                <div id="all-center-bookings" style="margin-top: 2rem;">
+                    <!-- List of bookings -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast message -->
+    <div id="toast-msg" class="toast-msg"></div>
+
+    <script src="js/booking.js"></script>
+    <script>
+        function handleLogout() {
+            if(confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('center_data');
+                window.location.href = 'index.html';
+            }
+        }
+
+        function showTab(tab) {
+            console.log("Switching to tab:", tab);
+            const tabs = ['overview', 'subscription', 'my-center', 'bookings'];
+            tabs.forEach(t => {
+                const el = document.getElementById(t + '-tab');
+                if (el) el.style.display = t === tab ? 'block' : 'none';
+            });
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const onClickStr = item.getAttribute('onclick') || '';
+                // Use a more targeted check for the tab name
+                if (onClickStr.includes(`showTab('${tab}')`)) {
+                    item.classList.add('active');
+                } else if (onClickStr.includes('showTab')) {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        let selectedVenueFile = null;
+
+        function previewVenueImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            selectedVenueFile = file;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('img-preview-box').style.display = 'block';
+                document.getElementById('c-img-preview').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveCenterDetails(event) {
+            event.preventDefault();
+            const btn = document.getElementById('save-center-btn');
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Synchronizing...`;
+            btn.disabled = true;
+
+            let imageUrl = "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=600&auto=format&fit=crop&q=60";
+            
+            // 1. Firebase Cloud Upload if ready
+            if (selectedVenueFile && window.SS_FB && window.SS_FB.auth.app.options.apiKey !== "YOUR_API_KEY") {
+                try {
+                    const { storage, methods } = window.SS_FB;
+                    const storageRef = methods.ref(storage, `venues/${Date.now()}_${selectedVenueFile.name}`);
+                    const snapshot = await methods.uploadBytes(storageRef, selectedVenueFile);
+                    imageUrl = await methods.getDownloadURL(snapshot.ref);
+                } catch (err) {
+                    console.error("Cloud Image Error:", err);
+                }
+            }
+
+            const details = {
+                id: 'custom-' + Date.now(),
+                name: document.getElementById('c-name').value,
+                city: document.getElementById('c-city').value,
+                location: document.getElementById('c-location').value,
+                price: parseInt(document.getElementById('c-price').value),
+                openTime: document.getElementById('c-open').value,
+                closeTime: document.getElementById('c-close').value,
+                desc: document.getElementById('c-desc').value,
+                sports: ["Badminton", "Cricket", "Football"], // Default
+                emoji: "🏟️",
+                rating: 5.0,
+                indoor: true,
+                img: imageUrl
+            };
+
+            // 2. Save to Firestore if connected
+            if (window.SS_FB && window.SS_FB.auth.app.options.apiKey !== "YOUR_API_KEY") {
+                try {
+                    const { db, methods } = window.SS_FB;
+                    await methods.addDoc(methods.collection(db, "centers"), details);
+                    showToast('✅ Cloud Sync Successful!');
+                } catch (err) {
+                    console.error("Firestore Error:", err);
+                }
+            }
+
+            // Fallback: Save to localStorage for demo
+            localStorage.setItem('my_center_info', JSON.stringify(details));
+            const CUSTOM_CENTERS_KEY = "ss_custom_centers_v4";
+            let customCenters = JSON.parse(localStorage.getItem(CUSTOM_CENTERS_KEY) || "[]");
+            customCenters.push(details);
+            localStorage.setItem(CUSTOM_CENTERS_KEY, JSON.stringify(customCenters));
+
+            showToast('Local Database Updated!');
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        // Auto-populate from predefined or custom list
+        function autoPopulateCenter(name) {
+            if(!name) return;
+            
+            // 1. Check custom centers first
+            const CUSTOM_CENTERS_KEY = "ss_custom_centers_v4";
+            const customCenters = JSON.parse(localStorage.getItem(CUSTOM_CENTERS_KEY) || "[]");
+            
+            // 2. Check predefined CENTERS (we'll fetch from booking.js if possible, or use a fallback)
+            // Since booking.js is external, we'll try to find it in the global list if it loaded
+            const allCenters = [...(typeof CENTERS !== 'undefined' ? CENTERS : []), ...customCenters];
+            
+            const found = allCenters.find(c => c.name.toLowerCase() === name.toLowerCase());
+            
+            if (found) {
+                document.getElementById('c-city').value = found.city || 'Colombo';
+                document.getElementById('c-location').value = found.location || '';
+                document.getElementById('c-price').value = found.price || 0;
+                document.getElementById('c-desc').value = found.desc || '';
+                showToast('Found Match! Details Loaded.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Populate datalist
+            const suggestionsEl = document.getElementById('center-suggestions');
+            const CUSTOM_CENTERS_KEY = "ss_custom_centers_v4";
+            const customCenters = JSON.parse(localStorage.getItem(CUSTOM_CENTERS_KEY) || "[]");
+            
+            // Combine with default centers if available (fallback to a few if CENTERS not globally available yet)
+            const baseNames = typeof CENTERS !== 'undefined' ? CENTERS.map(c => c.name) : ["Sugathadasa Indoor Stadium", "Colts Cricket Grounds", "SSC Grounds", "Kandy Esplanade Grounds"];
+            const allNames = [...new Set([...baseNames, ...customCenters.map(c => c.name)])];
+            
+            allNames.sort().forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                suggestionsEl.appendChild(opt);
+            });
+            const centerData = JSON.parse(localStorage.getItem('center_data') || '{}');
+            if (centerData.name) {
+                document.getElementById('welcome-msg').innerText = `Welcome, ${centerData.name}`;
+            }
+
+            const savedInfo = JSON.parse(localStorage.getItem('my_center_info') || '{}');
+            if (savedInfo.name) {
+                document.getElementById('c-name').value = savedInfo.name;
+                document.getElementById('c-city').value = savedInfo.city;
+                document.getElementById('c-location').value = savedInfo.location;
+                document.getElementById('c-price').value = savedInfo.price;
+                document.getElementById('c-open').value = savedInfo.openTime || '06:00';
+                document.getElementById('c-close').value = savedInfo.closeTime || '22:00';
+                document.getElementById('c-desc').value = savedInfo.desc;
+                
+                // Change button text for returning owners
+                const saveBtn = document.getElementById('save-center-btn');
+                if (saveBtn) {
+                    saveBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Update Venue Details`;
+                }
+            }
+
+            renderCenterBookings();
+        });
+
+        function renderCenterBookings() {
+            const allBookings = JSON.parse(localStorage.getItem('ss_bookings_v4') || '[]');
+            const savedInfo = JSON.parse(localStorage.getItem('my_center_info') || '{}');
+            const centerName = savedInfo.name || '';
+
+            const myBookings = allBookings.filter(b => b.center === centerName);
+            const container = document.getElementById('recent-bookings-list');
+            const fullContainer = document.getElementById('all-center-bookings');
+
+            if (myBookings.length === 0) {
+                container.innerHTML = `<div class="glass" style="padding: 1.5rem; color: var(--text-secondary); text-align: center;">No activity yet.</div>`;
+                fullContainer.innerHTML = `<div class="glass" style="padding: 3rem; color: var(--text-secondary); text-align: center;">No reservations found for your center.</div>`;
+                document.getElementById('stat-bookings').innerText = '0';
+                document.getElementById('stat-revenue').innerText = 'Rs. 0';
+                return;
+            }
+
+            let revenue = 0;
+            const html = myBookings.map(b => {
+                revenue += b.total;
+                return `
+                    <div class="glass" style="padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="display: block;">${b.name} (${b.age}y)</strong>
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">${b.date} &nbsp;·&nbsp; ${b.startTime} - ${b.endTime}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <strong style="display: block; color: #0ea5e9;">Rs. ${b.total.toLocaleString()}</strong>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">${b.sport}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+            fullContainer.innerHTML = html;
+            document.getElementById('stat-bookings').innerText = myBookings.length;
+            document.getElementById('stat-revenue').innerText = `Rs. ${revenue.toLocaleString()}`;
+        }
+    </script>
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="payment-modal">
+        <div class="modal-box">
+            <button class="modal-close-btn" onclick="closePaymentModal()">&times;</button>
+            <div class="modal-header">
+                <h2><i class="fas fa-credit-card"></i> Activate Premium Plan</h2>
+                <div class="modal-center-badge" id="pay-plan-badge" style="background: rgba(139,92,246,0.15); margin-top:10px;">
+                    <span id="pay-icon" style="font-size: 1.5rem;">💎</span>
+                    <div>
+                        <strong id="pay-plan-title">Elite Pro Subscription</strong>
+                        <small id="pay-plan-amount">Rs. 45,000 / month</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; margin-top: 20px;">
+                <button class="btn btn-outline active" onclick="setPayMethod('card')" style="flex:1; padding: 10px; font-size: 0.8rem; border-radius: 12px;"><i class="fas fa-credit-card"></i> Card</button>
+                <button class="btn btn-outline" onclick="setPayMethod('bank')" style="flex:1; padding: 10px; font-size: 0.8rem; border-radius: 12px;"><i class="fas fa-university"></i> Bank</button>
+            </div>
+
+            <div id="card-form">
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; font-size:0.75rem; color:var(--text-secondary); margin-bottom:5px;">CARD NUMBER</label>
+                    <div style="position:relative;">
+                        <input type="text" class="modal-input" placeholder="4xxx xxxx xxxx xxxx" maxlength="19">
+                        <div style="position:absolute; right:15px; top:50%; transform:translateY(-50%); display:flex; gap:8px;">
+                            <i class="fab fa-cc-visa" style="color:#1a1f71; font-size:1.4rem;"></i>
+                            <i class="fab fa-cc-mastercard" style="color:#eb001b; font-size:1.4rem;"></i>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-secondary); margin-bottom:5px;">EXPIRY</label>
+                        <input type="text" class="modal-input" placeholder="MM / YY" maxlength="5">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.75rem; color:var(--text-secondary); margin-bottom:5px;">CVC</label>
+                        <input type="password" class="modal-input" placeholder="***" maxlength="3">
+                    </div>
+                </div>
+            </div>
+
+            <div id="bank-form" style="display:none; background:rgba(255,255,255,0.03); padding:20px; border-radius:15px; margin-bottom:20px; border:1px dashed var(--glass-border);">
+                <p style="font-size:0.85rem; color:var(--text-secondary); text-align:center;">
+                    Transfer the amount to the following account:<br><br>
+                    <strong style="color:white; font-size:1rem;">SPORTSPHERE NETWORKS LTD</strong><br>
+                    Bank: HNB · Branch: Kotte<br>
+                    ACC: 004010884521<br><br>
+                    <small>Upload receipt or provide Ref ID in portal later.</small>
+                </p>
+            </div>
+
+            <button class="btn btn-primary" onclick="processMockPayment()" style="width:100%; padding:18px;">
+                <i class="fas fa-shield-alt"></i> Complete Secure Payment
+            </button>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn btn-outline" onclick="payLaterSubscription()" style="border:none; color:var(--text-secondary); font-size:0.8rem; padding: 5px 15px;">
+                    <i class="fas fa-clock"></i> Pay Later (within 7 days)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PLANS = {
+            'base': { name: 'Base Utility', price: 15000, features: ['2 Active Courts', 'Real-time Scheduler', 'Member Profiles'] },
+            'elite': { name: 'Elite Pro', price: 45000, features: ['Unlimited Courts', 'AI Yield Optimization', 'Revenue Forecasts', 'White-label Portal'] },
+            'institutional': { name: 'Institutional', price: 95000, features: ['Multi-center Sync', 'API Infrastructure Access', 'Priority Node Support', 'Custom AI Models'] }
+        };
+
+
+
+        function openPaymentModal() {
+            document.getElementById('payment-modal').classList.add('open');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.remove('open');
+        }
+
+        function setPayMethod(m) {
+            const btns = document.querySelectorAll('.payment-tabs .btn');
+            btns.forEach(b => b.classList.remove('active'));
+            if (m === 'card') {
+                btns[0].classList.add('active');
+                document.getElementById('card-form').style.display = 'block';
+                document.getElementById('bank-form').style.display = 'none';
+            } else {
+                btns[1].classList.add('active');
+                document.getElementById('card-form').style.display = 'none';
+                document.getElementById('bank-form').style.display = 'block';
+            }
+        }
+
+        function processMockPayment() {
+            const planKey = localStorage.getItem('selected_plan') || 'base';
+            const plan = PLANS[planKey];
+            
+            showToast("🔒 Encrypting transaction...");
+            setTimeout(() => {
+                showToast(`✅ ${plan.name} Activated successfully!`);
+                localStorage.setItem('center_subscription', JSON.stringify({
+                    plan: planKey,
+                    status: 'Paid',
+                    paidAt: new Date().toLocaleDateString()
+                }));
+                closePaymentModal();
+                renderSubscription();
+            }, 1500);
+        }
+
+        function payLaterSubscription() {
+            const planKey = localStorage.getItem('selected_plan') || 'base';
+            
+            showToast("🕒 Pay Later initiated...");
+            setTimeout(() => {
+                localStorage.setItem('center_subscription', JSON.stringify({
+                    plan: planKey,
+                    status: 'Pending',
+                    dueAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+                }));
+                
+                alert("Subscription registered! Please complete payment within 7 days to keep your premium features active.");
+                closePaymentModal();
+                renderSubscription();
+            }, 1000);
+        }
+
+        function renderSubscription() {
+            const sub = JSON.parse(localStorage.getItem('center_subscription') || 'null');
+            const planKey = localStorage.getItem('selected_plan') || 'base';
+            const plan = PLANS[planKey];
+
+            const planNameEl = document.getElementById('current-plan-name');
+            const planPriceEl = document.getElementById('current-plan-price');
+            const payPlanTitleEl = document.getElementById('pay-plan-title');
+            const payPlanAmountEl = document.getElementById('pay-plan-amount');
+
+            if (planNameEl) planNameEl.innerText = plan.name;
+            if (planPriceEl) planPriceEl.innerText = `LKR ${plan.price.toLocaleString()}`;
+            if (payPlanTitleEl) payPlanTitleEl.innerText = `${plan.name} Subscription`;
+            if (payPlanAmountEl) payPlanAmountEl.innerText = `Rs. ${plan.price.toLocaleString()} / month`;
+
+            const list = document.getElementById('plan-features-list');
+            if (list) {
+                list.innerHTML = plan.features.map(f => `<li><i class="fas fa-check" style="color:var(--accent-primary);"></i> ${f}</li>`).join('');
+            }
+
+            const statusEl = document.getElementById('current-plan-status');
+            const payBtn = document.getElementById('manage-pay-btn');
+            const lateNote = document.getElementById('pay-later-note');
+
+            if (statusEl) {
+                if (sub && sub.status === 'Paid') {
+                    statusEl.innerText = "Active • Paid";
+                    statusEl.style.color = "#22c55e";
+                    if (payBtn) {
+                        payBtn.innerHTML = `<i class="fas fa-check-circle"></i> Subscription Active`;
+                        payBtn.style.background = "rgba(34,197,94,0.1)";
+                        payBtn.style.color = "#22c55e";
+                        payBtn.style.borderColor = "rgba(34,197,94,0.3)";
+                        payBtn.disabled = true;
+                    }
+                    if (lateNote) lateNote.style.display = 'none';
+                } else if (sub && sub.status === 'Pending') {
+                    statusEl.innerText = `Payment Due: ${sub.dueAt}`;
+                    statusEl.style.color = "#fbbf24";
+                    if (payBtn) {
+                        payBtn.innerHTML = `<i class="fas fa-credit-card"></i> Complete Payment Now`;
+                        payBtn.disabled = false;
+                        payBtn.style.background = ""; // Reset
+                    }
+                    if (lateNote) lateNote.style.display = 'block';
+                } else {
+                    statusEl.innerText = "Payment Pending";
+                    statusEl.style.color = "#fbbf24";
+                    if (payBtn) {
+                        payBtn.disabled = false;
+                        payBtn.style.background = ""; // Reset
+                    }
+                    if (lateNote) lateNote.style.display = 'none';
+                }
+            }
+        }
+
+        // Bridge initial render
+        document.addEventListener('DOMContentLoaded', () => {
+            // Session Validation (1 Hour Expiry)
+            const rawData = localStorage.getItem('center_data');
+            if (!rawData) {
+                window.location.href = 'center-auth.html';
+                return;
+            }
+
+            const centerData = JSON.parse(rawData);
+            const ONE_HOUR = 60 * 60 * 1000;
+            if (!centerData.loginTime || (Date.now() - centerData.loginTime > ONE_HOUR)) {
+                localStorage.removeItem('center_data');
+                window.location.href = 'center-auth.html';
+                return;
+            }
+
+            // Normal Initialization
+            const params = new URLSearchParams(window.location.search);
+            const planParam = params.get('plan');
+            if (planParam && PLANS[planParam]) {
+                localStorage.setItem('selected_plan', planParam);
+                const sub = localStorage.getItem('center_subscription');
+                if (!sub) setTimeout(openPaymentModal, 1000);
+            }
+            renderSubscription();
+        });
+    </script>
+</body>
+</html>

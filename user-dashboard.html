@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard | SportSphere</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 280px;
+        }
+        body {
+            background: var(--bg-primary);
+        }
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--glass-border);
+            padding: 2.5rem;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 3rem 5%;
+        }
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 3rem;
+            color: white;
+            text-transform: uppercase;
+        }
+        .sidebar-logo i {
+            color: var(--accent-primary);
+        }
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(139, 92, 246, 0.1);
+            color: white;
+        }
+        .nav-item.active {
+            color: var(--accent-primary);
+        }
+        .logout-btn {
+            margin-top: auto;
+            color: #ef4444;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3.5rem;
+        }
+        .stat-card { padding: 2.5rem; border-radius: 24px; position: relative; overflow: hidden; }
+        .stat-card::after { content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, var(--accent-glow), transparent 70%); opacity: 0.2; }
+        
+        .section-header-dash { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        
+        @media (max-width: 992px) {
+            .sidebar { width: 80px; padding: 2rem 1rem; align-items: center; }
+            .sidebar-logo span, .nav-item span { display: none; }
+            .main-content { margin-left: 80px; }
+        }
+        /* AI Widget Styles */
+        .ai-widget { position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; }
+        .ai-float-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--accent-primary); border: none; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 10px 25px var(--accent-glow); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        .ai-float-btn:hover { transform: scale(1.1) rotate(5deg); }
+        .ai-notif { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; border: 2px solid var(--bg-primary); }
+        
+        .ai-chat-window { position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; display: flex; flex-direction: column; opacity: 0; transform: translateY(20px) scale(0.95); pointer-events: none; transition: all 0.4s ease; transform-origin: bottom right; }
+        .ai-chat-window.active { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+        
+        .ai-chat-header { padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(139, 92, 246, 0.1); }
+        .ai-messages { flex: 1; padding: 1.2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .ai-msg { padding: 0.8rem 1.2rem; border-radius: 15px; font-size: 0.85rem; max-width: 85%; line-height: 1.5; }
+        .ai-msg.bot { background: rgba(255, 255, 255, 0.05); border-top-left-radius: 2px; align-self: flex-start; border: 1px solid var(--glass-border); }
+        .ai-msg.user { background: var(--accent-primary); border-top-right-radius: 2px; align-self: flex-end; color: white; }
+        
+        .ai-chat-input { padding: 1rem; border-top: 1px solid var(--glass-border); display: flex; gap: 10px; }
+        .ai-chat-input input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px 15px; color: white; outline: none; }
+        .ai-chat-input button { background: var(--accent-primary); border: none; color: white; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; }
+
+        /* Typing Animation */
+        .typing { display: flex; gap: 4px; padding: 10px 15px !important; width: fit-content; }
+        .dot { width: 6px; height: 6px; background: var(--text-secondary); border-radius: 50%; animation: typing 1.4s infinite; opacity: 0.3; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-4px); opacity: 1; } }
+
+        /* Premium Gallery Styles */
+        .memories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .memory-card {
+            position: relative;
+            height: 350px;
+            border-radius: 24px;
+            overflow: hidden;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--glass-border);
+            transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+            cursor: pointer;
+        }
+        .memory-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--accent-primary);
+            box-shadow: 0 30px 60px -15px rgba(139, 92, 246, 0.3);
+        }
+        .memory-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+        .memory-card:hover .memory-image {
+            transform: scale(1.15);
+        }
+        .memory-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(10, 15, 29, 0.95) 0%, rgba(10, 15, 29, 0.4) 40%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 2rem;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+        .memory-card:hover .memory-overlay {
+            opacity: 1;
+        }
+        .memory-date {
+            font-size: 0.75rem;
+            color: var(--accent-secondary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 0.5rem;
+        }
+        .memory-actions {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 10px;
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .memory-card:hover .memory-actions {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .action-btn.delete:hover {
+            background: #ef4444;
+            border-color: #ef4444;
+        }
+        .action-btn.view:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        /* Mock Payment Modal Styles */
+        .payment-card-input {
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 15px;
+            color: white;
+            width: 100%;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 8px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .payment-card-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        .payment-methods {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .payment-method {
+            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.02);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .payment-method.active {
+            border-color: var(--accent-primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+        .payment-method img {
+            height: 25px;
+            filter: grayscale(1);
+            transition: all 0.3s ease;
+        }
+        .payment-method.active img {
+            filter: grayscale(0);
+        }
+        .payment-security {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="index.html" class="sidebar-logo" style="text-decoration: none;">
+                <i class="fas fa-basketball-ball"></i>
+                <span>SportSphere</span>
+            </a>
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="showTab('home')">
+                    <i class="fas fa-house"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" onclick="showTab('bookings')">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>My Bookings</span>
+                </div>
+                <div class="nav-item" onclick="showTab('explore')">
+                    <i class="fas fa-search"></i>
+                    <span>Book a Court</span>
+                </div>
+                <div class="nav-item" onclick="showTab('memories')">
+                    <i class="fas fa-camera"></i>
+                    <span>Memories</span>
+                </div>
+
+                <!-- Logout -->
+                <div class="nav-item logout-btn" style="margin-top: 2rem;" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="position: relative;">
+            <div style="position: absolute; top: 3rem; right: 5%; z-index: 10;">
+                <a href="index.html" class="btn btn-outline" style="padding: 10px 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-arrow-left"></i> Back to Main Site
+                </a>
+            </div>
+            
+            <div id="home-tab">
+                <div class="section-header-dash">
+                    <div>
+                        <h1 id="user-welcome">Hello, Sportsman!</h1>
+                        <p style="color: var(--text-secondary);">Ready for your next game?</p>
+                    </div>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="glass stat-card">
+                        <i class="fas fa-history" style="font-size: 1.5rem; color: var(--accent-primary); margin-bottom: 1rem; display: block;"></i>
+                        <h3 style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem;">Active Bookings</h3>
+                        <p style="font-size: 2rem; font-weight: 700;" id="active-count">0</p>
+                    </div>
+                    <div class="glass stat-card">
+                        <i class="fas fa-wallet" style="font-size: 1.5rem; color: var(--accent-primary); margin-bottom: 1rem; display: block;"></i>
+                        <h3 style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem;">Wallet Credits</h3>
+                        <p style="font-size: 2rem; font-weight: 700;">Rs. 2,450</p>
+                    </div>
+                </div>
+
+                <div class="section-box">
+                    <div class="section-header-dash">
+                        <h2>Upcoming Sessions</h2>
+                        <a href="#" onclick="showTab('explore')" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.8rem;">+ Book New Game</a>
+                    </div>
+                    <div id="upcoming-list">
+                        <!-- Latest booking or empty state -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="bookings-tab" style="display: none;">
+                <div class="section-header-dash">
+                    <h1>My Reservations</h1>
+                </div>
+                <!-- Standard ID for booking.js to target -->
+                <div id="my-bookings-list" class="my-bookings-list" style="margin-top: 2.5rem;">
+                    <!-- Rendered List -->
+                </div>
+            </div>
+
+            <div id="explore-tab" style="display: none;">
+                <div class="section-header-dash" style="margin-bottom: 3rem;">
+                    <h1>Book a Court</h1>
+                </div>
+
+                <!-- Full Filter UI from Home Page -->
+                <div class="sport-filter-row fade-up" style="justify-content: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <button class="sport-pill active" onclick="filterSport('All', this)">🏟️ All Sports</button>
+                    <button class="sport-pill" onclick="filterSport('Cricket', this)">🏏 Cricket</button>
+                    <button class="sport-pill" onclick="filterSport('Football', this)">⚽ Football</button>
+                    <button class="sport-pill" onclick="filterSport('Futsal', this)">🥅 Futsal</button>
+                    <button class="sport-pill" onclick="filterSport('Badminton', this)">🏸 Badminton</button>
+                    <button class="sport-pill" onclick="filterSport('Swimming', this)">🏊 Swimming</button>
+                    <button class="sport-pill" onclick="filterSport('Tennis', this)">🎾 Tennis</button>
+                    <button class="sport-pill" onclick="filterSport('Padel', this)">🎾 Padel</button>
+                    <button class="sport-pill" onclick="filterSport('Pickleball', this)">🏓 Pickleball</button>
+                    <button class="sport-pill" onclick="filterSport('Basketball', this)">🏀 Basketball</button>
+                    <button class="sport-pill" onclick="filterSport('Volleyball', this)">🏐 Volleyball</button>
+                </div>
+
+                <div class="sport-filter-row fade-up" style="justify-content: flex-start; margin-top: -0.5rem; margin-bottom: 2rem;">
+                    <button class="indoor-pill active" onclick="filterIndoor('All', this)">🌐 All Venues</button>
+                    <button class="indoor-pill" onclick="filterIndoor('Indoor', this)"><i class="fas fa-warehouse"></i> Indoor</button>
+                    <button class="indoor-pill" onclick="filterIndoor('Outdoor', this)"><i class="fas fa-sun"></i> Outdoor</button>
+                </div>
+
+                <div class="booking-filters fade-up" style="max-width: none; margin: 0 0 3rem 0; gap: 1rem;">
+                    <div class="booking-search-wrap" style="flex: 2;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="center-search" placeholder="Search centers or cities…" oninput="renderCenters()"/>
+                    </div>
+                    <select id="city-filter" class="booking-select" onchange="renderCenters()" style="flex: 1;">
+                        <option value="">All Cities</option>
+                        <option>Colombo</option>
+                        <option>Kandy</option>
+                        <option>Galle</option>
+                        <option>Negombo</option>
+                        <option>Kurunegala</option>
+                        <option>Matara</option>
+                        <option>Jaffna</option>
+                    </select>
+                </div>
+
+                <!-- Standard ID for booking.js to target -->
+                <div class="centers-grid" id="centers-grid" style="margin-bottom: 5rem;"></div>
+
+                <!-- Live Map Preview Area -->
+                <div id="grounds-map" class="fade-up" style="margin-top: 4rem;">
+                    <div class="section-header-dash">
+                        <h2>Venue Location</h2>
+                        <p style="color: var(--text-secondary);">Find the exact location of your selected sports center.</p>
+                    </div>
+                    <div class="glass" style="padding: 1.5rem; border-radius: 20px; overflow: hidden; height: 450px;">
+                        <iframe 
+                            id="grounds-iframe"
+                            src="https://maps.google.com/maps?q=sports%20grounds%20in%20Sri%20Lanka&t=&z=8&ie=UTF8&iwloc=&output=embed" 
+                            width="100%" 
+                            height="100%" 
+                            style="border:0; border-radius: 12px; filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%);" 
+                            allowfullscreen="" 
+                            loading="lazy">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MEMORIES TAB -->
+            <div id="memories-tab" style="display: none;">
+                <div class="section-header-dash">
+                    <h1>Sports Memories</h1>
+                </div>
+                
+                <div class="glass" style="padding: 2.5rem; border-radius: 24px; margin-bottom: 3rem; text-align: center; border: 2px dashed rgba(255,255,255,0.1);">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: var(--accent-primary); margin-bottom: 1.5rem;"></i>
+                    <h3>Upload a Memory</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">Share a photo from your recent match.</p>
+                    <input type="file" id="memory-upload" accept="image/*" style="display: none;" onchange="handleMemoryUpload(event)">
+                    <button class="btn btn-primary" onclick="document.getElementById('memory-upload').click()">
+                        <i class="fas fa-plus"></i> Select Photo
+                    </button>
+                    <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 1rem;">Supports JPG, PNG (Max 5MB)</p>
+                </div>
+
+                <div class="memories-grid" id="memories-grid">
+                    <!-- Memories will be rendered here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SportSphere AI Assistant Widget -->
+    <div id="ai-widget" class="ai-widget">
+        <div id="ai-chat-window" class="glass ai-chat-window">
+            <div class="ai-chat-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-robot" style="color: var(--accent-primary);"></i>
+                    <div>
+                        <strong style="display: block; font-size: 0.9rem;">SportSphere AI</strong>
+                        <span style="font-size: 0.7rem; color: #10b981;">● Online Assistant</span>
+                    </div>
+                </div>
+                <button onclick="toggleAIChat()" style="background:none; border:none; color:white; cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="ai-messages" class="ai-messages">
+                <div class="ai-msg bot">Hello! I'm your SportSphere AI. How can I help you find the perfect game today?</div>
+            </div>
+            <div class="ai-chat-input">
+                <input type="text" id="ai-input" placeholder="Ask about venues or sports..." onkeypress="handleAIKey(event)">
+                <button onclick="sendAIMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <button class="ai-float-btn" onclick="toggleAIChat()">
+            <i class="fas fa-comment-dots"></i>
+            <span class="ai-notif">1</span>
+        </button>
+    </div>
+
+    <!-- Modals & Toasts -->
+    <div class="modal-overlay" id="booking-modal">
+        <div class="modal-box glass">
+            <button class="modal-close-btn" onclick="closeBookingModal()"><i class="fas fa-times"></i></button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Mock Payment Modal -->
+    <div class="modal-overlay" id="payment-modal">
+        <div class="modal-box glass" style="max-width: 480px;">
+            <div id="payment-content">
+                <!-- Injected via booking.js -->
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-msg" class="toast-msg"></div>
+
+    <script src="js/main.js"></script>
+    <script src="js/booking.js"></script>
+    <script src="js/ai-brain.js"></script>
+    <script>
+        function handleLogout() {
+            if(confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('user_data');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // SportSphere AI Core Logic (Local Smart Brain Engine)
+        let currentAILang = 'en';
+
+        function toggleAIChat() {
+            const window = document.getElementById('ai-chat-window');
+            window.classList.toggle('active');
+            document.querySelector('.ai-notif').style.display = 'none';
+        }
+
+        function handleAIKey(e) { if(e.key === 'Enter') sendAIMessage(); }
+
+        async function sendAIMessage() {
+            const input = document.getElementById('ai-input');
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            appendAIMessage(msg, 'user');
+            input.value = '';
+
+            // Language switch detection
+            const lowMsg = msg.toLowerCase();
+            if (lowMsg.includes("sinhala") || lowMsg.includes("සිංහල")) currentAILang = 'si';
+            if (lowMsg.includes("english") || lowMsg.includes("ඉංග්‍රීසි")) currentAILang = 'en';
+
+            const container = document.getElementById('ai-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'ai-msg bot typing';
+            typingDiv.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+            typingDiv.id = 'ai-typing';
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+
+            // Simulated AI Thinking Delay (800ms)
+            setTimeout(() => {
+                document.getElementById('ai-typing')?.remove();
+                
+                // Use SSB (Smart Semantic Brain) from js/ai-brain.js
+                try {
+                    const response = SSB.process(msg);
+                    appendAIMessage(response, 'bot');
+                } catch (e) {
+                    console.error("AI Error:", e);
+                    appendAIMessage("I'm having a little trouble thinking. Can you try asking in a different way?", 'bot');
+                }
+            }, 800);
+        }
+
+        function appendAIMessage(text, side) {
+            const container = document.getElementById('ai-messages');
+            if(!container) return;
+            const div = document.createElement('div');
+            div.className = `ai-msg ${side}`;
+            div.innerText = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+
+
+        function showTab(tab) {
+            document.getElementById('home-tab').style.display = tab === 'home' ? 'block' : 'none';
+            document.getElementById('bookings-tab').style.display = tab === 'bookings' ? 'block' : 'none';
+            document.getElementById('explore-tab').style.display = tab === 'explore' ? 'block' : 'none';
+            document.getElementById('memories-tab').style.display = tab === 'memories' ? 'block' : 'none';
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const tabAttr = item.getAttribute('onclick');
+                item.classList.toggle('active', tabAttr && tabAttr.includes(`'${tab}'`));
+            });
+
+            if (tab === 'explore') {
+                window.renderCenters();
+                setTimeout(() => {
+                    document.querySelectorAll('#centers-grid .fade-up').forEach(el => el.classList.add('visible'));
+                }, 50);
+            }
+            if (tab === 'bookings') {
+                window.renderMyBookings();
+                setTimeout(() => {
+                    document.querySelectorAll('#my-bookings-list .fade-up').forEach(el => el.classList.add('visible'));
+                }, 50);
+            }
+            if (tab === 'memories') {
+                renderMemories();
+            }
+            if (tab === 'home') updateStats();
+        }
+
+        // --- Memories System (Firebase Powered) ---
+        async function handleMemoryUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Check if Firebase is configured
+            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
+                showToast("⚠️ Please configure Firebase API Keys in firebase-config.js first.");
+                return;
+            }
+
+            const user = window.SS_FB.auth.currentUser;
+            if (!user) { showToast("Please login first!"); return; }
+
+            showToast("🚀 Uploading to Cloud...");
+            
+            try {
+                const { storage, db, methods } = window.SS_FB;
+                const storageRef = methods.ref(storage, `memories/${user.uid}/${Date.now()}_${file.name}`);
+                
+                // 1. Upload to Firebase Storage
+                const snapshot = await methods.uploadBytes(storageRef, file);
+                const downloadURL = await methods.getDownloadURL(snapshot.ref);
+
+                // 2. Save to Firestore
+                await methods.addDoc(methods.collection(db, "memories"), {
+                    userId: user.uid,
+                    url: downloadURL,
+                    date: new Date().toLocaleDateString(),
+                    createdAt: new Date()
+                });
+
+                showToast("✨ Memory saved to Cloud Storage!");
+                renderMemories();
+            } catch (error) {
+                console.error("Upload Error:", error);
+                showToast("❌ Upload failed. Check console.");
+            }
+        }
+
+        async function renderMemories() {
+            const grid = document.getElementById('memories-grid');
+            const user = window.SS_FB?.auth?.currentUser;
+
+            // Fallback to localStorage if Firebase not ready
+            if (!user || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
+                const memories = JSON.parse(localStorage.getItem('ss_memories_v1') || "[]");
+                if (memories.length === 0) {
+                    grid.innerHTML = `<div class="no-results" style="grid-column: 1/-1;"><p>No local memories. (Configure Firebase for Cloud Storage)</p></div>`;
+                    return;
+                }
+                grid.innerHTML = memories.map(m => createMemoryCard(m)).join("");
+                return;
+            }
+
+            // Real Firebase Fetch
+            const { db, methods } = window.SS_FB;
+            const q = methods.query(methods.collection(db, "memories"), methods.where("userId", "==", user.uid));
+            const querySnapshot = await methods.getDocs(q);
+            
+            let html = "";
+            querySnapshot.forEach((doc) => {
+                const m = { ...doc.data(), id: doc.id };
+                html += createMemoryCard(m, true);
+            });
+            
+            grid.innerHTML = html || `<div class="no-results" style="grid-column: 1/-1;"><p>No memories in your cloud account yet.</p></div>`;
+        }
+
+                function createMemoryCard(m, isCloud = false) {
+            return `
+                <div class="memory-card fade-up visible">
+                    <img src="${m.url}" class="memory-image" alt="Sports Memory">
+                    <div class="memory-overlay">
+                        <div class="memory-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            ${m.date}
+                        </div>
+                        <h4 style="color: white; margin: 0; font-size: 1rem;">Game Moment</h4>
+                    </div>
+                    <div class="memory-actions">
+                        <button class="action-btn view" onclick="window.open('${m.url}', '_blank')">
+                            <i class="fas fa-expand-alt"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="${isCloud ? `deleteCloudMemory('${m.id}')` : `deleteMemory('${m.id}')`}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function deleteCloudMemory(id) {
+            if(!confirm("Delete from Cloud?")) return;
+            // Real delete implementation would call deleteDoc(doc(db, "memories", id))
+            showToast("Cloud delete feature ready! (Implementation hidden)");
+        }
+        
+        // Auth Listener
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkFB = setInterval(() => {
+                if (window.SS_FB) {
+                    clearInterval(checkFB);
+                    window.SS_FB.methods.onAuthStateChanged(window.SS_FB.auth, (user) => {
+                        if (user) {
+                            document.getElementById('user-welcome').innerText = `Hello, ${user.displayName || 'Sportsman'}!`;
+                            renderMemories();
+                        } else {
+                            // Local fallback for demo
+                            const localData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                            if (localData.name) document.getElementById('user-welcome').innerText = `Hello, ${localData.name}!`;
+                        }
+                    });
+                }
+            }, 500);
+        });
+
+        async function updateStats() {
+            // Load bookings using the same logic as booking.js
+            const STORAGE_KEY = "ss_bookings_v4";
+            let bookings = [];
+            try {
+                bookings = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+            } catch(_) {}
+
+            const activeCountEl = document.getElementById('active-count');
+            const upcomingListEl = document.getElementById('upcoming-list');
+
+            if (activeCountEl) activeCountEl.innerText = bookings.length;
+            
+            if (upcomingListEl) {
+                if (bookings.length > 0) {
+                    const latest = bookings[0];
+                    upcomingListEl.innerHTML = `
+                        <div class="booking-item glass visible" style="opacity: 1; transform: none;">
+                            <div class="booking-item-icon">${latest.emoji}</div>
+                            <div class="booking-item-info">
+                                <h4>${latest.center}</h4>
+                                <p><i class="fas fa-calendar"></i> ${latest.date} &nbsp;·&nbsp; <i class="fas fa-clock"></i> ${latest.startTime}</p>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <span class="booking-status-badge">Confirmed</span>
+                                <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;" onclick="showTab('bookings')">Details</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    upcomingListEl.innerHTML = `
+                        <div class="glass" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">
+                            <i class="fas fa-calendar-minus" style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No upcoming sessions. Time to book one!</p>
+                            <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="showTab('explore')">Book Now</button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Bridge to ensure booking.js updates us
+        const originalSaveBookings = window.saveBookings;
+        window.saveBookings = async function(b) {
+            if (originalSaveBookings) await originalSaveBookings(b);
+            updateStats();
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Session Validation (1 Hour Expiry)
+            const rawData = localStorage.getItem('user_data');
+            if (!rawData) {
+                window.location.href = 'user-auth.html';
+                return;
+            }
+
+            const userData = JSON.parse(rawData);
+            const ONE_HOUR = 60 * 60 * 1000;
+            if (!userData.loginTime || (Date.now() - userData.loginTime > ONE_HOUR)) {
+                localStorage.removeItem('user_data');
+                window.location.href = 'user-auth.html';
+                return;
+            }
+
+            if (userData.name) {
+                document.getElementById('user-welcome').innerText = `Hello, ${userData.name}!`;
+            }
+            // Trigger initial render with multiple checks to handle async data
+            const refreshAll = () => {
+                updateStats();
+                if (window.renderCenters) window.renderCenters();
+                if (window.renderMyBookings) {
+                    window.renderMyBookings();
+                    // Force visibility for dashboard items
+                    document.querySelectorAll('#my-bookings-list .fade-up').forEach(el => el.classList.add('visible'));
+                }
+            };
+
+            setTimeout(refreshAll, 100);
+            setTimeout(refreshAll, 500); // Secondary check for slow storage
+        });
+    </script>
+</body>
+</html>

@@ -92,18 +92,19 @@ ul { list-style: none; }
     position: fixed; 
     top: 0; 
     width: 100%; 
-    padding: 1.5rem 8%; 
+    padding: 1.2rem 5%; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
     z-index: 1000; 
     transition: var(--transition); 
     background: transparent;
+    flex-wrap: nowrap;
 }
 .navbar.scrolled { 
     background: var(--nav-bg); 
     backdrop-filter: blur(20px); 
-    padding: 1rem 8%; 
+    padding: 0.8rem 5%; 
     border-bottom: 1px solid var(--glass-border); 
 }
 [data-theme="light"] .navbar:not(.scrolled) {
@@ -111,17 +112,18 @@ ul { list-style: none; }
     backdrop-filter: blur(10px);
 }
 .logo { 
-    font-size: 1.8rem; 
+    font-size: 1.5rem; 
     font-weight: 800; 
     display: flex; 
     align-items: center; 
-    gap: 15px; 
+    gap: 12px; 
     text-transform: uppercase; 
     letter-spacing: 1px; 
     color: var(--text-primary);
+    flex-shrink: 0;
 }
-.logo-icon { color: var(--accent-primary); font-size: 2rem; }
-.nav-links { display: flex; align-items: center; gap: 2rem; }
+.logo-icon { color: var(--accent-primary); font-size: 1.8rem; }
+.nav-links { display: flex; align-items: center; gap: 1.5rem; flex-shrink: 1; }
 .nav-links a { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); }
 .nav-links a:hover { color: var(--accent-primary); }
 
@@ -132,8 +134,31 @@ ul { list-style: none; }
 .hero-bg.active { opacity: 1; z-index: 2; }
 .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(0,0,0,0.3), rgba(0,0,0,0.8)); z-index: -1; }
 .hero-content { max-width: 1000px; z-index: 2; }
-.hero h1 { font-size: 6rem; font-weight: 800; line-height: 1; margin-bottom: 1.5rem; text-transform: uppercase; color: #ffffff; }
-.hero h1 span.glow { color: var(--accent-primary); text-shadow: 0 0 30px var(--accent-glow); }
+.hero-brand { 
+    font-size: 1.25rem; 
+    letter-spacing: 0.6rem; 
+    font-weight: 300; 
+    color: var(--accent-primary); 
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    display: block;
+    opacity: 0.9;
+}
+.hero-main { 
+    font-size: 6.5rem; 
+    font-weight: 900; 
+    text-transform: uppercase; 
+    line-height: 1;
+    color: #ffffff;
+    letter-spacing: -2px;
+}
+.hero-main .highlight {
+    background: linear-gradient(135deg, var(--accent-primary), #a78bfa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px var(--accent-glow);
+}
 .hero p { font-size: 1.5rem; color: #ffffff; margin-bottom: 3.5rem; font-weight: 500; }
 
 /* Slider */
@@ -592,7 +617,7 @@ footer { padding: 6rem 10% 2rem; background: var(--bg-primary); border-top: 1px 
     position: fixed;
     bottom: 30px;
     left: 50%;
-    transform: translateX(-50%) translateY(80px);
+    transform: translateX(-50%) translateY(100px);
     background: var(--accent-primary);
     color: white;
     padding: 14px 28px;
@@ -601,11 +626,17 @@ footer { padding: 6rem 10% 2rem; background: var(--bg-primary); border-top: 1px 
     font-weight: 700;
     z-index: 9999;
     pointer-events: none;
-    transition: transform 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 10px 30px rgba(139,92,246,0.4);
     white-space: nowrap;
 }
-.toast-msg.show { transform: translateX(-50%) translateY(0); }
+.toast-msg.show { 
+    transform: translateX(-50%) translateY(0); 
+    opacity: 1;
+    visibility: visible;
+}
 
 /* Map Section */
 .map-container {
@@ -633,7 +664,15 @@ footer { padding: 6rem 10% 2rem; background: var(--bg-primary); border-top: 1px 
     section { padding: 80px 8%; }
     .modal-form-grid { grid-template-columns: 1fr; }
     .slots-grid { grid-template-columns: repeat(3, 1fr); }
-    .nav-links { gap: 1.2rem; }
+    .nav-links { gap: 1rem; }
+    .nav-links a { font-size: 0.8rem; }
+    .logo { font-size: 1.2rem; }
+    .logo-icon { font-size: 1.5rem; }
+    .dash-btns { gap: 0.3rem; }
+    .dash-btns .btn { padding: 6px 12px !important; font-size: 0.65rem !important; }
+}
+@media (max-width: 850px) {
+    .nav-links a:nth-child(n+3) { display: none; } /* Show only Home & Book a Court */
 }
 @media (max-width: 768px) {
     .centers-grid { grid-template-columns: 1fr; }

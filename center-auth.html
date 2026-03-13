@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Center Portal | SportSphere</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at 100% 100%, #102a3c 0%, #05070a 100%);
+        }
+        .auth-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+            z-index: 10;
+        }
+        .auth-card {
+            padding: 2rem;
+            text-align: center;
+            border-color: #0ea5e9; /* Light blue accent for centers */
+        }
+        .auth-header {
+            margin-bottom: 1.5rem;
+        }
+        .auth-header i {
+            font-size: 3rem;
+            color: #0ea5e9;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 15px rgba(14, 165, 233, 0.4));
+        }
+        .auth-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .auth-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 12px;
+            margin-bottom: 1.2rem;
+            border: 1px solid var(--glass-border);
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .auth-tab.active {
+            background: #0ea5e9;
+            color: white;
+        }
+        .form-group {
+            margin-bottom: 0.8rem;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.6rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #0ea5e9;
+            opacity: 0.7;
+        }
+        .input-wrap input {
+            width: 100%;
+            padding: 11px 15px 11px 45px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            outline: none;
+            transition: var(--transition);
+        }
+        .input-wrap input:focus {
+            border-color: #0ea5e9;
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.1);
+        }
+        .auth-btn {
+            width: 100%;
+            margin-top: 1rem;
+            background: #0ea5e9 !important;
+        }
+        .auth-btn:hover {
+            background: #38bdf8 !important;
+        }
+        .toggle-text {
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .toggle-text span {
+            color: #0ea5e9;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1rem 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .divider:not(:empty)::before { margin-right: .5em; }
+        .divider:not(:empty)::after { margin-left: .5em; }
+        .google-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: white;
+            color: #333;
+            border-radius: 12px;
+            padding: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+        .google-btn:hover {
+            background: #f1f1f1;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .google-btn img {
+            width: 18px;
+        }
+        .back-home {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .back-home:hover {
+            color: white;
+            transform: translateX(-5px);
+        }
+        #signup-form {
+            display: none;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script type="module" src="js/firebase-config.js"></script>
+</head>
+<body>
+    <a href="index.html" class="back-home"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+    <div class="auth-container">
+        <div class="glass auth-card">
+            <div class="auth-header">
+                <i class="fas fa-building"></i>
+                <h1>Center Portal</h1>
+                <p>Manage your arena and track revenue.</p>
+            </div>
+
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="showForm('login')">Login</div>
+                <div class="auth-tab" onclick="showForm('signup')">Register</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleAuth(event, 'login')">
+                <div class="form-group">
+                    <label>Center Email</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="login-email" placeholder="contact@arena.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="login-password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn">Center Login</button>
+                
+                <div class="divider">OR</div>
+                
+                <button type="button" class="google-btn" onclick="handleGoogleSignIn()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                    Continue with Google
+                </button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signup-form" onsubmit="handleAuth(event, 'signup')">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Center Name</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-building"></i>
+                            <input type="text" id="signup-name" placeholder="Elite Sports Arena" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <div class="input-wrap">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="signup-email" placeholder="contact@arena.com" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="signup-password" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary auth-btn">Register Center</button>
+                
+                <div class="divider">OR</div>
+                
+                <button type="button" class="google-btn" onclick="handleGoogleSignIn()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                    Register with Google
+                </button>
+            </form>
+
+            <div class="toggle-text">
+                <p id="auth-toggle-msg">Want to list your center? <span onclick="showForm('signup')">Register</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast message -->
+    <div id="toast-msg" class="toast-msg"></div>
+
+    <script>
+        // Check for existing session
+        document.addEventListener('DOMContentLoaded', () => {
+            const rawData = localStorage.getItem('center_data');
+            if (rawData) {
+                const centerData = JSON.parse(rawData);
+                const ONE_HOUR = 60 * 60 * 1000;
+                if (Date.now() - centerData.loginTime < ONE_HOUR) {
+                    window.location.href = 'center-dashboard.html';
+                } else {
+                    localStorage.removeItem('center_data');
+                }
+            }
+        });
+
+        function showForm(type) {
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const tabs = document.querySelectorAll('.auth-tab');
+            const toggleMsg = document.getElementById('auth-toggle-msg');
+
+            if (type === 'login') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+                toggleMsg.innerHTML = "Want to list your center? <span onclick=\"showForm('signup')\">Register</span>";
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                tabs[1].classList.add('active');
+                tabs[0].classList.remove('active');
+                toggleMsg.innerHTML = "Already have an account? <span onclick=\"showForm('login')\">Login</span>";
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function handleAuth(event, type) {
+            event.preventDefault();
+            
+            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
+                showToast("⚠️ Local Demo: Configure Firebase for Center Auth.");
+                const name = type === 'signup' ? document.getElementById('signup-name').value : 'Arena Owner';
+                localStorage.setItem('center_data', JSON.stringify({ 
+                    name, 
+                    email: 'arena@demo.com', 
+                    type: 'center',
+                    loginTime: Date.now() 
+                }));
+                const params = new URLSearchParams(window.location.search);
+                const plan = params.get('plan') || '';
+                setTimeout(() => window.location.href = `center-dashboard.html${plan ? '?plan='+plan : ''}`, 1000);
+                return;
+            }
+
+            const { auth, methods } = window.SS_FB;
+            const email = type === 'login' ? document.getElementById('login-email').value : document.getElementById('signup-email').value;
+            const password = type === 'login' ? document.getElementById('login-password').value : document.getElementById('signup-password').value;
+
+            try {
+                showToast('Verifying Arena Credentials...');
+                if (type === 'signup') {
+                    await methods.createUserWithEmailAndPassword(auth, email, password);
+                    showToast('Center Registered! Opening Dashboard...');
+                } else {
+                    await methods.signInWithEmailAndPassword(auth, email, password);
+                    showToast('Welcome back, Partner!');
+                }
+                const user = auth.currentUser;
+                localStorage.setItem('center_data', JSON.stringify({ 
+                    name: user.displayName || 'Arena Owner', 
+                    email: user.email, 
+                    type: 'center',
+                    loginTime: Date.now() 
+                }));
+                const params = new URLSearchParams(window.location.search);
+                const plan = params.get('plan') || '';
+                setTimeout(() => window.location.href = `center-dashboard.html${plan ? '?plan='+plan : ''}`, 1500);
+            } catch (error) {
+                console.error("Center Auth Error:", error);
+                showToast(`❌ ${error.message}`);
+            }
+        }
+
+        async function handleGoogleSignIn() {
+            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
+                showToast("⚠️ Demo Mode: Google Sign-in requires Firebase.");
+                localStorage.setItem('center_data', JSON.stringify({ 
+                    name: 'Super Arena', 
+                    email: 'arena@owner.com', 
+                    type: 'center',
+                    loginTime: Date.now() 
+                }));
+                const params = new URLSearchParams(window.location.search);
+                const plan = params.get('plan') || '';
+                setTimeout(() => window.location.href = `center-dashboard.html${plan ? '?plan='+plan : ''}`, 1000);
+                return;
+            }
+
+            const { auth, googleProvider, methods } = window.SS_FB;
+            try {
+                showToast('Authenticating via Google...');
+                await methods.signInWithPopup(auth, googleProvider);
+                showToast('Success! Redirecting...');
+                const user = auth.currentUser;
+                localStorage.setItem('center_data', JSON.stringify({ 
+                    name: user.displayName || 'Arena Partner', 
+                    email: user.email, 
+                    type: 'center',
+                    loginTime: Date.now() 
+                }));
+                const params = new URLSearchParams(window.location.search);
+                const plan = params.get('plan') || '';
+                setTimeout(() => window.location.href = `center-dashboard.html${plan ? '?plan='+plan : ''}`, 1500);
+            } catch (error) {
+                console.error("Google Center Auth Error:", error);
+                showToast(`❌ Authentication failed.`);
+            }
+        }
+    </script>
+</body>
+</html>
