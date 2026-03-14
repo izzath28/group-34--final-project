@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="module" src="js/firebase-config.js"></script>
     <style>
@@ -288,6 +289,10 @@
                     <i class="fas fa-search"></i>
                     <span>Book a Court</span>
                 </div>
+                <div class="nav-item" onclick="showTab('health')">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Health Check</span>
+                </div>
                 <div class="nav-item" onclick="showTab('memories')">
                     <i class="fas fa-camera"></i>
                     <span>Memories</span>
@@ -438,6 +443,51 @@
                     <!-- Memories will be rendered here -->
                 </div>
             </div>
+
+            <!-- HEALTH TAB -->
+            <div id="health-tab" style="display: none;">
+                <div class="section-header-dash" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1>Health & Fitness Dashboard</h1>
+                    <button onclick="downloadHealthPDF()" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.85rem;">
+                        <i class="fas fa-file-medical"></i> Major PDF Report
+                    </button>
+                </div>
+                
+                <div class="glass" style="padding: 2.5rem; border-radius: 24px; margin-bottom: 3rem;">
+                    <form onsubmit="calculateHealth(event)">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                            <div class="form-group">
+                                <label>Enter Age (Years)</label>
+                                <input type="number" id="health-age" class="modal-input" required min="10" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>Enter Weight (kg)</label>
+                                <input type="number" id="health-weight" class="modal-input" required min="30" max="250" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label>Enter Height (cm)</label>
+                                <input type="number" id="health-height" class="modal-input" required min="100" max="250">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px;">Calculate Health Metrics</button>
+                    </form>
+
+                    <div id="health-results" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--glass-border);">
+                        <h3 style="color: var(--accent-primary); margin-bottom: 1.5rem;">Latest Assessment Results</h3>
+                        <p id="health-output-text" style="font-size: 1.1rem; line-height: 1.6; color: white;">
+                            <!-- Results will be injected here -->
+                        </p>
+                    </div>
+                </div>
+
+                <div class="section-header-dash">
+                    <h2>Recent Health Profile History</h2>
+                    <p style="color: var(--text-secondary);">Track your fitness progress over time.</p>
+                </div>
+                <div id="health-history-list" class="glass" style="padding: 1.5rem; border-radius: 20px; min-height: 100px;">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading history...</div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -561,6 +611,7 @@
             document.getElementById('home-tab').style.display = tab === 'home' ? 'block' : 'none';
             document.getElementById('bookings-tab').style.display = tab === 'bookings' ? 'block' : 'none';
             document.getElementById('explore-tab').style.display = tab === 'explore' ? 'block' : 'none';
+            document.getElementById('health-tab').style.display = tab === 'health' ? 'block' : 'none';
             document.getElementById('memories-tab').style.display = tab === 'memories' ? 'block' : 'none';
 
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -583,7 +634,231 @@
             if (tab === 'memories') {
                 renderMemories();
             }
+            if (tab === 'health') {
+                loadHealthHistory();
+            }
             if (tab === 'home') updateStats();
+        }
+
+        // --- Health & Fitness Logic (Health-Informed Booking) ---
+        async function calculateHealth(e) {
+            e.preventDefault();
+            const age = parseFloat(document.getElementById('health-age').value);
+            const weight = parseFloat(document.getElementById('health-weight').value);
+            const heightCm = parseFloat(document.getElementById('health-height').value);
+            
+            if(!age || !weight || !heightCm) return;
+            
+            // BMI Calculation
+            const heightM = heightCm / 100;
+            const bmi = (weight / (heightM * heightM)).toFixed(1);
+            
+            let bmiCategory = "Normal";
+            if(bmi < 18.5) bmiCategory = "Underweight";
+            else if(bmi >= 25 && bmi < 29.9) bmiCategory = "Overweight";
+            else if(bmi >= 30) bmiCategory = "Obese";
+
+            // Cardio Health target Zones
+            const maxHeartRate = 220 - age;
+            const zoneLow = Math.round(maxHeartRate * 0.6);
+            const zoneHigh = Math.round(maxHeartRate * 0.85);
+
+            // Recommendations Logic
+            let recSport = "Tennis or Swimming";
+            if (bmiCategory === "Obese" || bmiCategory === "Overweight") {
+                recSport = "Swimming, Walking, or Cycling (Low-impact)";
+            } else if (age < 30 && bmiCategory === "Normal") {
+                recSport = "Basketball, Football, or Training";
+            } else if (age >= 50) {
+                recSport = "Badminton, Yoga, or Brisk Walking";
+            }
+
+            // Save to Firebase
+            const record = {
+                age, weight, height: heightCm, bmi, category: bmiCategory, 
+                zone: `${zoneLow}-${zoneHigh}`, sport: recSport,
+                timestamp: Date.now()
+            };
+
+            if (window.SS_FB && window.SS_FB.auth.currentUser) {
+                try {
+                    const userId = window.SS_FB.auth.currentUser.uid;
+                    await window.SS_FB.methods.addDoc(window.SS_FB.methods.collection(window.SS_FB.db, `users/${userId}/health_history`), record);
+                    showToast("✅ Health data saved to your profile.");
+                    loadHealthHistory();
+                } catch (err) {
+                    console.error("Save error:", err);
+                }
+            }
+
+            // Bind to UI
+            const resultsDiv = document.getElementById('health-results');
+            const outText = document.getElementById('health-output-text');
+            
+            outText.innerHTML = `Your BMI is <strong style="color: var(--accent-secondary);">${bmi} (${bmiCategory})</strong>.<br>
+            Your recommended Cardio Training Zone is <strong>${zoneLow} - ${zoneHigh} BPM</strong>.<br><br>
+            Based on your profile, we recommend: <strong style="color: var(--accent-primary);">${recSport}</strong>.`;
+            
+            resultsDiv.style.display = 'block';
+        }
+
+        async function loadHealthHistory() {
+            const container = document.getElementById('health-history-list');
+            if (!window.SS_FB || !window.SS_FB.auth.currentUser) {
+                container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Please sign in to see your history.</div>';
+                return;
+            }
+
+            try {
+                const userId = window.SS_FB.auth.currentUser.uid;
+                const q = window.SS_FB.methods.query(
+                    window.SS_FB.methods.collection(window.SS_FB.db, `users/${userId}/health_history`),
+                    window.SS_FB.methods.where("timestamp", ">", 0) // Dummy to trigger sort if needed or just get all
+                );
+                
+                const snap = await window.SS_FB.methods.getDocs(q);
+                let history = [];
+                snap.forEach(doc => history.push(doc.data()));
+                history.sort((a,b) => b.timestamp - a.timestamp);
+
+                if (history.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No health records yet. Take your first check!</div>';
+                    return;
+                }
+
+                container.innerHTML = history.map(h => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div>
+                            <div style="font-weight: 600; font-size: 1rem;">BMI: ${h.bmi} (${h.category})</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${new Date(h.timestamp).toLocaleString()}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.85rem; color: var(--accent-primary); font-weight: 600;">Weight: ${h.weight}kg</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Age: ${h.age} | Zone: ${h.zone}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error("Load history error:", err);
+            }
+        }
+
+        async function downloadHealthPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Fetch All History First
+            if (!window.SS_FB || !window.SS_FB.auth.currentUser) {
+                showToast("Please sign in to generate report.");
+                return;
+            }
+
+            try {
+                const userId = window.SS_FB.auth.currentUser.uid;
+                const q = window.SS_FB.methods.query(
+                    window.SS_FB.methods.collection(window.SS_FB.db, `users/${userId}/health_history`)
+                );
+                const snap = await window.SS_FB.methods.getDocs(q);
+                let history = [];
+                snap.forEach(doc => history.push(doc.data()));
+                history.sort((a,b) => b.timestamp - a.timestamp);
+
+                if(history.length === 0) {
+                    showToast("No health records found to export!");
+                    return;
+                }
+
+                // --- 🎨 Premium Letterhead ---
+                doc.setFillColor(10, 15, 29); // Dark Theme Blue
+                doc.rect(0, 0, 210, 50, 'F');
+                
+                // Add Gradient Bar
+                doc.setFillColor(139, 92, 246); // Purple
+                doc.rect(0, 48, 210, 2, 'F');
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(28);
+                doc.text("SportSphere", 20, 30);
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "normal");
+                doc.text("ELITE PERFORMANCE ANALYTICS", 20, 40);
+
+                // --- 📄 Report Details ---
+                doc.setTextColor(10, 15, 29);
+                doc.setFontSize(20);
+                doc.setFont("helvetica", "bold");
+                doc.text("MAJOR HEALTH PROGRESSION REPORT", 20, 70);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "italic");
+                doc.setTextColor(120, 120, 120);
+                doc.text(`REPORT ID: SS-${Date.now()}`, 140, 80);
+                doc.text(`GENERATED: ${new Date().toLocaleString()}`, 140, 85);
+
+                const current = history[0]; // Latest
+
+                // --- 👤 Profile Summary ---
+                doc.setFillColor(245, 245, 250);
+                doc.roundedRect(20, 95, 170, 40, 3, 3, 'F');
+                doc.setTextColor(10, 15, 29);
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text("LATEST PROFILE SUMMARY:", 25, 105);
+                
+                doc.setFont("helvetica", "normal");
+                doc.text(`Current Weight: ${current.weight} kg`, 30, 115);
+                doc.text(`Current Height: ${current.height} cm`, 30, 125);
+                doc.text(`Latest BMI: ${current.bmi} (${current.category})`, 100, 115);
+                doc.text(`Cardio Zone: ${current.zone} BPM`, 100, 125);
+
+                // --- 📊 History Table ---
+                doc.setFont("helvetica", "bold");
+                doc.text("HISTORICAL HEALTH TRACKING:", 20, 150);
+                
+                const tableData = history.map(h => [
+                    new Date(h.timestamp).toLocaleDateString(),
+                    h.age,
+                    h.weight + "kg",
+                    h.bmi,
+                    h.category,
+                    h.zone + " BPM"
+                ]);
+
+                doc.autoTable({
+                    startY: 155,
+                    head: [['Date', 'Age', 'Weight', 'BMI', 'Status', 'Cardio Limit']],
+                    body: tableData,
+                    headStyles: { fillColor: [139, 92, 246], textColor: [255, 255, 255] },
+                    alternateRowStyles: { fillColor: [245, 245, 255] },
+                    margin: { left: 20, right: 20 }
+                });
+
+                // Recommendation Section
+                const finalY = doc.lastAutoTable.finalY + 15;
+                doc.setTextColor(139, 92, 246);
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text("FINAL CLINICAL RECOMMENDATION:", 20, finalY);
+                doc.setTextColor(10, 15, 29);
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                const splitRec = doc.splitTextToSize(`Based on your cumulative tracking, your ideal performance sports are: ${current.sport}. We recommend maintaining a training heart rate between ${current.zone} BPM for optimal results.`, 160);
+                doc.text(splitRec, 20, finalY + 10);
+
+                // Footer
+                doc.setFontSize(9);
+                doc.setTextColor(150, 150, 150);
+                doc.text("This is an automated system-generated report. Please consult a professional coach for rigorous training plans.", 20, 285);
+
+                doc.save(`SportSphere_Major_Report_${Date.now()}.pdf`);
+                showToast("✅ Major Health Report Downloaded!");
+
+            } catch (err) {
+                console.error("PDF History load error:", err);
+                showToast("❌ Failed to load history for PDF.");
+            }
         }
 
         // --- Memories System (Firebase Powered) ---
