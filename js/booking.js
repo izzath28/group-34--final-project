@@ -74,25 +74,31 @@ const SLOT_STORAGE_KEY = "ss_slots_v4";
 let CENTER_SLOTS = {};
 
 async function loadSlots() {
+    let localData = {};
     try {
-        if (window.storage) {
+        if (window.storage && typeof window.storage.get === 'function') {
             const result = await window.storage.get(SLOT_STORAGE_KEY);
-            if (result) {
-                CENTER_SLOTS = JSON.parse(result.value);
-                return;
-            }
+            if (result && result.value) localData = JSON.parse(result.value);
+        } else {
+            const saved = localStorage.getItem(SLOT_STORAGE_KEY);
+            if (saved) localData = JSON.parse(saved);
         }
-    } catch (_) {}
-
-    const saved = localStorage.getItem(SLOT_STORAGE_KEY);
-    if (saved) {
-        CENTER_SLOTS = JSON.parse(saved);
-    } else {
-        CENTERS.forEach(c => {
-            CENTER_SLOTS[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: Math.random() < 0.28 }));
-        });
-        await saveSlots();
+    } catch (e) {
+        console.warn("Slot loading failed, using defaults:", e);
+        localData = {};
     }
+
+    // Ensure EVERY center in the current system has slots
+    if (typeof CENTERS !== 'undefined') {
+        CENTERS.forEach(c => {
+            if (!localData[c.id]) {
+                localData[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: Math.random() < 0.28 }));
+            }
+        });
+    }
+
+    CENTER_SLOTS = localData;
+    await saveSlots();
 }
 
 async function saveSlots() {
@@ -207,8 +213,9 @@ window.renderCenters = function() {
     const city   = document.getElementById("city-filter")?.value || "";
 
     const filtered = CENTERS.filter(c => {
-        const matchSport  = activeSport === "All" || c.sports.includes(activeSport);
-        const matchSearch = !search || c.name.toLowerCase().includes(search) || c.city.toLowerCase().includes(search) || c.location.toLowerCase().includes(search);
+        const cSports = c.sports || [];
+        const matchSport  = activeSport === "All" || cSports.includes(activeSport);
+        const matchSearch = !search || c.name.toLowerCase().includes(search) || c.city.toLowerCase().includes(search) || (c.location && c.location.toLowerCase().includes(search));
         const matchCity   = !city || c.city === city;
         const matchIndoor = activeIndoor === "All" || (activeIndoor === "Indoor" ? c.indoor : !c.indoor);
         return matchSport && matchSearch && matchCity && matchIndoor;
@@ -223,35 +230,37 @@ window.renderCenters = function() {
     }
 
     grid.innerHTML = filtered.map(c => {
-        const slots = CENTER_SLOTS[c.id];
+        const slots = (CENTER_SLOTS && CENTER_SLOTS[c.id]) ? CENTER_SLOTS[c.id] : [];
         const avail = slots.filter(s => !s.taken).length;
-        const full  = avail === 0;
-        const stars = "★".repeat(Math.round(c.rating)) + "☆".repeat(5 - Math.round(c.rating));
+        const full  = slots.length > 0 && avail === 0;
+        const stars = "★".repeat(Math.round(c.rating || 0)) + "☆".repeat(5 - Math.round(c.rating || 0));
         const indoorBadge = c.indoor
             ? `<span class="indoor-tag"><i class="fas fa-warehouse"></i> Indoor</span>`
             : `<span class="indoor-tag outdoor"><i class="fas fa-sun"></i> Outdoor</span>`;
+        const cImg = c.img || "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=600";
+        const cSportsList = c.sports || [];
 
         return `
-        <div class="center-card glass fade-up" onclick="openBookingModal(${c.id})">
-            <div class="center-card-img" style="background-image:url('${c.img}')">
+        <div class="center-card glass fade-up visible" style="opacity:1; transform:none;" onclick="openBookingModal(${c.id})">
+            <div class="center-card-img" style="background-image:url('${cImg}')">
                 <span class="avail-tag ${full ? "full" : ""}">${full ? "Fully Booked" : avail + " slots free"}</span>
                 ${indoorBadge}
             </div>
             <div class="center-card-body">
                 <div class="center-card-header">
-                    <span class="center-emoji">${c.emoji}</span>
+                    <span class="center-emoji">${c.emoji || '🏟️'}</span>
                     <div>
-                        <h3 class="center-name">${c.name}</h3>
-                        <p class="center-loc"><i class="fas fa-map-marker-alt"></i> ${c.location}</p>
+                        <h3 class="center-name">${c.name || 'Sports Center'}</h3>
+                        <p class="center-loc"><i class="fas fa-map-marker-alt"></i> ${c.location || 'Sri Lanka'}</p>
                     </div>
                 </div>
                 <div class="center-sports-tags">
-                    ${c.sports.map(s => `<span class="center-sport-tag">${s}</span>`).join("")}
+                    ${cSportsList.map(s => `<span class="center-sport-tag">${s}</span>`).join("")}
                 </div>
                 <div class="center-card-footer">
                     <div>
-                        <div class="center-price">Rs. ${c.price.toLocaleString()} <span>/ hr</span></div>
-                        <div class="center-stars">${stars} <small>${c.rating}</small></div>
+                        <div class="center-price">Rs. ${(c.price || 0).toLocaleString()} <span>/ hr</span></div>
+                        <div class="center-stars">${stars} <small>${c.rating || 'N/A'}</small></div>
                     </div>
                     <div style="display:flex;gap:8px;">
                         <button class="btn btn-outline" style="padding: 9px 12px; font-size: 0.82rem;" title="Locate on Map" onclick="event.stopPropagation(); updateGroundMap('${c.name}')">
@@ -266,8 +275,10 @@ window.renderCenters = function() {
         </div>`;
     }).join("");
 
+    // Initialize potential new fade elements
     document.querySelectorAll(".fade-up:not(.visible)").forEach(el => {
-        window.fadeObserver && window.fadeObserver.observe(el);
+        if (window.fadeObserver) window.fadeObserver.observe(el);
+        else { el.classList.add('visible'); el.style.opacity = "1"; el.style.transform = "none"; }
     });
 };
 
