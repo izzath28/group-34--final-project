@@ -307,10 +307,7 @@ window.openBookingModal = function(centerId) {
             </div>
         </div>
 
-        <div class="form-group" style="margin-top: 1.5rem;">
-            <label><i class="fas fa-user-clock"></i> Age</label>
-            <input class="modal-input" id="m-age" type="number" placeholder="Your age" min="1"/>
-        </div>
+
 
         <div class="form-group" style="margin-top:1.5rem;">
             <label><i class="fas fa-hourglass-half"></i> Duration</label>
@@ -436,14 +433,14 @@ window.updateSummary = function() {
 window.confirmBooking = async function() {
     const name    = document.getElementById("m-name").value.trim();
     const phone   = document.getElementById("m-phone").value.trim();
-    const age     = document.getElementById("m-age").value.trim();
+
     const sport   = document.getElementById("m-sport").value;
     const date    = document.getElementById("m-date").value;
     const players = document.getElementById("m-players").value;
 
     if (!name)                     { showToast("⚠️ Please enter your name"); return; }
     if (!phone)                    { showToast("⚠️ Please enter your phone number"); return; }
-    if (!age)                      { showToast("⚠️ Please enter your age"); return; }
+
     if (selectedStartIdx === null) { showToast("⚠️ Please select a start time"); return; }
     if (!/^0\d{9}$/.test(phone.replace(/\s/g, ""))) {
         showToast("⚠️ Enter a valid Sri Lankan number (e.g. 0771234567)"); return;
@@ -462,7 +459,7 @@ window.confirmBooking = async function() {
         emoji:        selectedCenter.emoji,
         sport, date, startTime, endTime,
         hours:        selectedHours,
-        name, phone, age, players,
+        name, phone, players,
         pricePerHour: selectedCenter.price,
         total,
         status:       "Confirmed",
