@@ -73,29 +73,41 @@ const TIME_SLOTS = ["06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:
 const SLOT_STORAGE_KEY = "ss_slots_v4";
 let CENTER_SLOTS = {};
 
-function loadSlots() {
+async function loadSlots() {
     try {
-        const saved = localStorage.getItem(SLOT_STORAGE_KEY);
-        if (saved) {
-            CENTER_SLOTS = JSON.parse(saved);
-        } else {
-            CENTERS.forEach(c => {
-                CENTER_SLOTS[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: Math.random() < 0.28 }));
-            });
-            saveSlots();
+        if (window.storage) {
+            const result = await window.storage.get(SLOT_STORAGE_KEY);
+            if (result) {
+                CENTER_SLOTS = JSON.parse(result.value);
+                return;
+            }
         }
-    } catch (_) {
+    } catch (_) {}
+
+    const saved = localStorage.getItem(SLOT_STORAGE_KEY);
+    if (saved) {
+        CENTER_SLOTS = JSON.parse(saved);
+    } else {
         CENTERS.forEach(c => {
             CENTER_SLOTS[c.id] = TIME_SLOTS.map(t => ({ time: t, taken: Math.random() < 0.28 }));
         });
+        await saveSlots();
     }
 }
 
-function saveSlots() {
+async function saveSlots() {
+    if (window.storage) {
+        await window.storage.set(SLOT_STORAGE_KEY, JSON.stringify(CENTER_SLOTS));
+    }
     localStorage.setItem(SLOT_STORAGE_KEY, JSON.stringify(CENTER_SLOTS));
 }
 
-loadSlots();
+// Global Refresh Helper
+window.refreshSlots = async function() {
+    await loadSlots();
+    renderCenters();
+};
+
 
 // Load custom centers from centers dashboard
 const CUSTOM_CENTERS_KEY = "ss_custom_centers_v4";
@@ -577,7 +589,7 @@ window.finishBooking = async function(booking) {
     for (let i = selectedStartIdx; i < selectedStartIdx + selectedHours; i++) {
         if (CENTER_SLOTS[selectedCenter.id][i]) CENTER_SLOTS[selectedCenter.id][i].taken = true;
     }
-    saveSlots();
+    await saveSlots();
 
     document.getElementById("modal-content").innerHTML = `
         <div class="booking-success">
@@ -874,6 +886,7 @@ window.downloadReceipt = function(bookingId) {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await loadSlots();
     myBookings = await loadBookings();
     renderCenters();
     renderMyBookings();
