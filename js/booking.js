@@ -680,7 +680,7 @@ window.renderMyBookings = function() {
         const bTotal = b.total || 0;
         
         return `
-        <div class="booking-item glass fade-up" id="bi-${b.id}" style="padding: 18px 25px; margin-bottom: 15px; display: block;">
+        <div class="booking-item glass fade-up visible" id="bi-${b.id}" style="padding: 18px 25px; margin-bottom: 15px; display: block; opacity: 1; transform: none;">
             <div class="booking-item-info">
                 <h4 style="font-size: 1.6rem; margin-bottom: 12px; display: flex; align-items: center; gap: 15px;">
                     <span style="font-size: 2.5rem; background: rgba(255,255,255,0.05); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 14px;">${b.emoji || '🏟️'}</span>
