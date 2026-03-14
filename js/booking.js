@@ -513,10 +513,10 @@ window.openPaymentModal = function(booking) {
 
         <div class="payment-methods">
             <div class="payment-method active" onclick="this.parentElement.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active')); this.classList.add('active')">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d6/Visa_2021.svg" alt="Visa" style="height: 25px; width: auto; display: block; margin: 0 auto; filter: none;">
+                <img src="https://img.icons8.com/color/48/000000/visa.png" alt="Visa" style="height: 32px; width: auto; display: block; margin: 0 auto; transition: none;">
             </div>
             <div class="payment-method" onclick="this.parentElement.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active')); this.classList.add('active')">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" style="height: 35px; width: auto; display: block; margin: 0 auto; filter: none;">
+                <img src="https://img.icons8.com/color/48/000000/mastercard.png" alt="Mastercard" style="height: 32px; width: auto; display: block; margin: 0 auto; transition: none;">
             </div>
         </div>
 
