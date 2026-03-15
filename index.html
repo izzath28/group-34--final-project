@@ -17,7 +17,7 @@
     <meta name="apple-mobile-web-app-title" content="SportSphere">
     <link rel="apple-touch-icon" href="favicon.png">
     
-    <!-- v1.0.3-apk-ios-v01 -->
+    <!-- v1.0.4-force-windows-v02 -->
 </head>
 
 <body id="home">
@@ -102,8 +102,17 @@
                     <p style="color: var(--text-secondary); margin-bottom: 2rem;">No need for App Stores. Install our professional sports platform directly to your home screen.</p>
                     
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-start; margin-top: 1rem;">
+                        <!-- Windows (Moved to First) -->
+                        <a href="assets/SportSphere_Windows.zip" id="win-dl-btn" download="SportSphere_Windows.zip" onclick="showToast('🚀 Downloading Windows App...')" class="btn btn-primary" style="background: #0078d4; border: 1px solid #00a2ed; border-radius: 50px; text-decoration: none; color: white; padding: 12px 25px; display: flex !important; align-items: center; gap: 10px; min-width: 180px;">
+                            <i class="fab fa-windows" style="font-size: 1.5rem;"></i>
+                            <div style="text-align: left; line-height: 1.2;">
+                                <small style="display: block; font-size: 0.6rem; opacity: 0.7;">Download for</small>
+                                <strong style="font-size: 0.9rem;">Windows PC</strong>
+                            </div>
+                        </a>
+
                         <!-- Android -->
-                        <a href="assets/SportSphere.apk" download="SportSphere.apk" onclick="showToast('✨ Downloading SportSphere APK...')" class="btn btn-primary" id="install-btn" style="background: #000; border: 1px solid var(--accent-primary); border-radius: 50px; text-decoration: none; color: white; padding: 12px 25px; display: flex; align-items: center; gap: 10px; min-width: 180px;">
+                        <a href="assets/SportSphere.apk" id="and-dl-btn" download="SportSphere.apk" onclick="showToast('✨ Downloading SportSphere APK...')" class="btn btn-primary" style="background: #000; border: 1px solid var(--accent-primary); border-radius: 50px; text-decoration: none; color: white; padding: 12px 25px; display: flex !important; align-items: center; gap: 10px; min-width: 180px;">
                             <i class="fab fa-android" style="font-size: 1.5rem;"></i>
                             <div style="text-align: left; line-height: 1.2;">
                                 <small style="display: block; font-size: 0.6rem; opacity: 0.7;">Get it for</small>
@@ -111,17 +120,8 @@
                             </div>
                         </a>
                         
-                        <!-- Windows -->
-                        <a href="assets/SportSphere_Windows.zip" download="SportSphere_Windows.zip" onclick="showToast('🚀 Downloading Windows App...')" class="btn btn-primary" style="background: #004d99; border: 1px solid #00a2ed; border-radius: 50px; text-decoration: none; color: white; padding: 12px 25px; display: flex; align-items: center; gap: 10px; min-width: 180px;">
-                            <i class="fab fa-windows" style="font-size: 1.5rem;"></i>
-                            <div style="text-align: left; line-height: 1.2;">
-                                <small style="display: block; font-size: 0.6rem; opacity: 0.7;">Download for</small>
-                                <strong style="font-size: 0.9rem;">Windows PC</strong>
-                            </div>
-                        </a>
-                        
                         <!-- iOS -->
-                        <button class="btn btn-outline" onclick="showIOSManual()" style="border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; color: #fff; padding: 12px 25px; display: flex; align-items: center; gap: 10px; min-width: 180px; background: rgba(255,255,255,0.05);">
+                        <button id="ios-dl-btn" class="btn btn-outline" onclick="showIOSManual()" style="border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; color: #fff; padding: 12px 25px; display: flex !important; align-items: center; gap: 10px; min-width: 180px; background: rgba(255,255,255,0.05);">
                             <i class="fab fa-apple" style="font-size: 1.5rem;"></i>
                             <div style="text-align: left; line-height: 1.2;">
                                 <small style="display: block; font-size: 0.6rem; opacity: 0.7;">Available for</small>
