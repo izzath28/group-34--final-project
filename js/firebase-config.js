@@ -1,8 +1,30 @@
-/**
- * SportSphere Firebase Configuration
- * 
- * Successfully connected to: sportspheredb
- */
+// Check for Offline Mode early
+if (typeof localStorage !== 'undefined' && localStorage.getItem('ss_system_mode') === 'offline') {
+    console.warn("🚫 SportSphere: External APIs (Firebase) disabled in Offline Mode.");
+    window.SS_FB = { 
+        disabled: true, 
+        auth: { currentUser: null }, 
+        db: {}, 
+        storage: {},
+        methods: {
+            // Mock empty methods to prevent crashes
+            getDocs: async () => ({ docs: [] }),
+            onSnapshot: () => (() => {}),
+            addDoc: async () => ({ id: 'local-' + Date.now() }),
+            deleteDoc: async () => {},
+            ref: () => ({}),
+            uploadBytes: async () => ({ ref: {} }),
+            getDownloadURL: async () => "",
+            deleteObject: async () => {},
+            doc: () => ({}),
+            collection: () => ({}),
+            query: () => ({}),
+            where: () => ({})
+        }
+    };
+    // Stop execution here in offline mode
+    throw new Error("MOCK_STOP_FOR_OFFLINE"); 
+}
 
 // We use the modular SDK from CDN for easy deployment on GitHub Pages
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";

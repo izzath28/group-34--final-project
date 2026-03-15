@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/mode-controller.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -870,14 +871,36 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // Check if Firebase is configured
-            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
-                showToast("⚠️ Please configure Firebase API Keys in firebase-config.js first.");
+            const isOffline = window.SS_MODE && window.SS_MODE.isOffline();
+
+            // --- OFFLINE MODE / LOCAL FALLBACK ---
+            if (isOffline || typeof window.SS_FB === 'undefined' || window.SS_FB.disabled) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const memories = JSON.parse(localStorage.getItem('ss_memories_offline') || "[]");
+                    memories.push({
+                        id: 'local-' + Date.now(),
+                        url: e.target.result, // Base64
+                        date: new Date().toLocaleDateString(),
+                        isLocal: true
+                    });
+                    localStorage.setItem('ss_memories_offline', JSON.stringify(memories));
+                    showToast("📁 Saved to Local Browser Storage!");
+                    renderMemories();
+                };
+                reader.readAsDataURL(file);
                 return;
             }
 
+            // --- ONLINE MODE ---
             const user = window.SS_FB.auth.currentUser;
             if (!user) { showToast("Please login first!"); return; }
+
+            // Check if Firebase is configured (for online mode)
+            if (window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
+                showToast("⚠️ Please configure Firebase API Keys in firebase-config.js first.");
+                return;
+            }
 
             showToast("🚀 Uploading to Cloud...");
             
@@ -909,15 +932,22 @@
         async function renderMemories() {
             const grid = document.getElementById('memories-grid');
             const user = window.SS_FB?.auth?.currentUser;
+            const isOffline = window.SS_MODE && window.SS_MODE.isOffline();
 
-            // Fallback to localStorage if Firebase not ready
-            if (!user || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
-                const memories = JSON.parse(localStorage.getItem('ss_memories_v1') || "[]");
-                if (memories.length === 0) {
-                    grid.innerHTML = `<div class="no-results" style="grid-column: 1/-1;"><p>No local memories. (Configure Firebase for Cloud Storage)</p></div>`;
+            // Fallback to localStorage if in Offline mode or Firebase not ready
+            if (isOffline || !user || window.SS_FB.disabled) {
+                const keys = ['ss_memories_offline', 'ss_memories_v1', 'ss_memories'];
+                let allLocalMemories = [];
+                keys.forEach(key => {
+                    const saved = JSON.parse(localStorage.getItem(key) || "[]");
+                    allLocalMemories = [...allLocalMemories, ...saved];
+                });
+
+                if (allLocalMemories.length === 0) {
+                    grid.innerHTML = `<div class="no-results" style="grid-column: 1/-1;"><p>${isOffline ? "No local memories in this browser yet." : "No local memories. (Configure Firebase for Cloud Storage)"}</p></div>`;
                     return;
                 }
-                grid.innerHTML = memories.map(m => createMemoryCard(m)).join("");
+                grid.innerHTML = allLocalMemories.map(m => createMemoryCard(m)).join("");
                 return;
             }
 
@@ -1018,12 +1048,29 @@
         function deleteMemory(id) {
             if(!confirm("Delete this local memory?")) return;
             
-            let memories = JSON.parse(localStorage.getItem('ss_memories_v1') || "[]");
-            memories = memories.filter(m => m.id !== id);
-            localStorage.setItem('ss_memories_v1', JSON.stringify(memories));
+            // Check both common local keys to be thorough
+            const keys = ['ss_memories_offline', 'ss_memories_v1', 'ss_memories'];
+            let found = false;
+
+            keys.forEach(key => {
+                let memories = JSON.parse(localStorage.getItem(key) || "[]");
+                if (memories.length > 0) {
+                    const initialLength = memories.length;
+                    memories = memories.filter(m => String(m.id) !== String(id));
+                    if (memories.length !== initialLength) {
+                        localStorage.setItem(key, JSON.stringify(memories));
+                        found = true;
+                    }
+                }
+            });
             
-            showToast("✅ Memory removed.");
-            renderMemories();
+            if (found) {
+                showToast("✅ Memory removed.");
+                renderMemories();
+            } else {
+                showToast("⚠️ Memory not found in local storage.");
+                renderMemories(); // Refresh anyway
+            }
         }
         
         // Auth Listener

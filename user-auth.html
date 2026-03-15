@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/mode-controller.js"></script>
     <style>
         body {
             display: flex;
@@ -313,13 +314,39 @@
         async function handleAuth(event, type) {
             event.preventDefault();
             
-            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
-                showToast("⚠️ Local Demo Mode: Configure Firebase for real Auth.");
-                // Fallback demo login
-                const name = type === 'signup' ? document.getElementById('signup-name').value : 'User';
+            const isOffline = window.SS_MODE && window.SS_MODE.isOffline();
+            const email = type === 'login' ? document.getElementById('login-email').value : document.getElementById('signup-email').value;
+            const password = type === 'login' ? document.getElementById('login-password').value : document.getElementById('signup-password').value;
+            const name = type === 'signup' ? document.getElementById('signup-name').value : '';
+
+            // --- OFFLINE MODE / DEMO MODE LOGIC ---
+            if (isOffline || typeof window.SS_FB === 'undefined' || window.SS_FB.disabled) {
+                showToast(isOffline ? "📂 Offline Mode: Using Local Database..." : "⚠️ Demo Mode: Simple Auth.");
+                
+                let localUsers = JSON.parse(localStorage.getItem('ss_local_users') || '[]');
+                
+                if (type === 'signup') {
+                    // Check if exists
+                    if (localUsers.find(u => u.email === email)) {
+                        showToast("❌ User already exists!");
+                        return;
+                    }
+                    localUsers.push({ name, email, password });
+                    localStorage.setItem('ss_local_users', JSON.stringify(localUsers));
+                    showToast("✅ Account Created (Local)!");
+                } else {
+                    // Login
+                    const user = localUsers.find(u => u.email === email && u.password === password);
+                    if (!user) {
+                        showToast("❌ Invalid Local Credentials!");
+                        return;
+                    }
+                    showToast("✅ Welcome back (Local)!");
+                }
+
                 localStorage.setItem('user_data', JSON.stringify({ 
-                    name, 
-                    email: 'demo@user.com', 
+                    name: name || email.split('@')[0], 
+                    email: email, 
                     type: 'user',
                     loginTime: Date.now() 
                 }));
@@ -327,10 +354,8 @@
                 return;
             }
 
+            // --- ONLINE MODE LOGIC ---
             const { auth, methods } = window.SS_FB;
-            const email = type === 'login' ? document.getElementById('login-email').value : document.getElementById('signup-email').value;
-            const password = type === 'login' ? document.getElementById('login-password').value : document.getElementById('signup-password').value;
-
             try {
                 showToast('Authentication in progress...');
                 if (type === 'signup') {

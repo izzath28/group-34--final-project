@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/mode-controller.js"></script>
     <style>
         body {
             display: flex;
@@ -318,12 +319,37 @@
         async function handleAuth(event, type) {
             event.preventDefault();
             
-            if (typeof window.SS_FB === 'undefined' || window.SS_FB.auth.app.options.apiKey === "YOUR_API_KEY") {
-                showToast("⚠️ Local Demo: Configure Firebase for Center Auth.");
-                const name = type === 'signup' ? document.getElementById('signup-name').value : 'Arena Owner';
+            const isOffline = window.SS_MODE && window.SS_MODE.isOffline();
+            const email = type === 'login' ? document.getElementById('login-email').value : document.getElementById('signup-email').value;
+            const password = type === 'login' ? document.getElementById('login-password').value : document.getElementById('signup-password').value;
+            const name = type === 'signup' ? document.getElementById('signup-name').value : '';
+
+            // --- OFFLINE MODE / DEMO MODE LOGIC ---
+            if (isOffline || typeof window.SS_FB === 'undefined' || window.SS_FB.disabled) {
+                showToast(isOffline ? "📂 Offline Mode: Storing Center Locally..." : "⚠️ Demo Mode: Simple Auth.");
+                
+                let localCenters = JSON.parse(localStorage.getItem('ss_local_centers') || '[]');
+                
+                if (type === 'signup') {
+                    if (localCenters.find(c => c.email === email)) {
+                        showToast("❌ Center Email already registered!");
+                        return;
+                    }
+                    localCenters.push({ name, email, password });
+                    localStorage.setItem('ss_local_centers', JSON.stringify(localCenters));
+                    showToast("✅ Center Registered (Local)!");
+                } else {
+                    const center = localCenters.find(c => c.email === email && c.password === password);
+                    if (!center) {
+                        showToast("❌ Invalid Local Center Credentials!");
+                        return;
+                    }
+                    showToast("✅ Welcome Partner (Local)!");
+                }
+
                 localStorage.setItem('center_data', JSON.stringify({ 
-                    name, 
-                    email: 'arena@demo.com', 
+                    name: name || email.split('@')[0], 
+                    email: email, 
                     type: 'center',
                     loginTime: Date.now() 
                 }));
@@ -333,10 +359,8 @@
                 return;
             }
 
+            // --- ONLINE MODE LOGIC ---
             const { auth, methods } = window.SS_FB;
-            const email = type === 'login' ? document.getElementById('login-email').value : document.getElementById('signup-email').value;
-            const password = type === 'login' ? document.getElementById('login-password').value : document.getElementById('signup-password').value;
-
             try {
                 showToast('Verifying Arena Credentials...');
                 if (type === 'signup') {
