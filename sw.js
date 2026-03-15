@@ -1,10 +1,9 @@
-const CACHE_NAME = 'ss-v1';
+const CACHE_NAME = 'ss-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/mode-controller.js',
-  '/favicon.png'
+  'index.html',
+  'css/style.css',
+  'js/mode-controller.js',
+  'favicon.png'
 ];
 
 self.addEventListener('install', (e) => {
