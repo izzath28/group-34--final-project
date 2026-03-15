@@ -893,6 +893,7 @@
                 await methods.addDoc(methods.collection(db, "memories"), {
                     userId: user.uid,
                     url: downloadURL,
+                    storagePath: storageRef.fullPath,
                     date: new Date().toLocaleDateString(),
                     createdAt: new Date()
                 });
@@ -927,7 +928,8 @@
             
             let html = "";
             querySnapshot.forEach((doc) => {
-                const m = { ...doc.data(), id: doc.id };
+                const data = doc.data();
+                const m = { ...data, id: doc.id };
                 html += createMemoryCard(m, true);
             });
             
@@ -952,7 +954,7 @@
                         <button class="action-btn download" onclick="downloadImage('${m.url}', 'SportSphere_Memory_${m.date.replace(/\//g, '-')}')" title="Download Image">
                             <i class="fas fa-download"></i>
                         </button>
-                        <button class="action-btn delete" onclick="${isCloud ? `deleteCloudMemory('${m.id}')` : `deleteMemory('${m.id}')`}" title="Delete Memory">
+                        <button class="action-btn delete" onclick="${isCloud ? `deleteCloudMemory('${m.id}', '${m.storagePath || ''}')` : `deleteMemory('${m.id}')`}" title="Delete Memory">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
@@ -989,10 +991,39 @@
             }
         }
 
-        async function deleteCloudMemory(id) {
-            if(!confirm("Delete from Cloud?")) return;
-            // Real delete implementation would call deleteDoc(doc(db, "memories", id))
-            showToast("Cloud delete feature ready! (Implementation hidden)");
+        async function deleteCloudMemory(id, path) {
+            if(!confirm("Are you sure you want to delete this memory from the cloud? This cannot be undone.")) return;
+            
+            showToast("🗑️ Deleting from Cloud...");
+            try {
+                const { db, storage, methods } = window.SS_FB;
+                
+                // 1. Delete Firestore Document
+                await methods.deleteDoc(methods.doc(db, "memories", id));
+                
+                // 2. Delete Storage Object if path exists
+                if (path) {
+                    const storageRef = methods.ref(storage, path);
+                    await methods.deleteObject(storageRef);
+                }
+                
+                showToast("✅ Memory deleted successfully.");
+                renderMemories();
+            } catch (error) {
+                console.error("Delete Error:", error);
+                showToast("❌ Delete failed. Check console.");
+            }
+        }
+
+        function deleteMemory(id) {
+            if(!confirm("Delete this local memory?")) return;
+            
+            let memories = JSON.parse(localStorage.getItem('ss_memories_v1') || "[]");
+            memories = memories.filter(m => m.id !== id);
+            localStorage.setItem('ss_memories_v1', JSON.stringify(memories));
+            
+            showToast("✅ Memory removed.");
+            renderMemories();
         }
         
         // Auth Listener
