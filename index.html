@@ -10,7 +10,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="manifest.json">
     <script src="js/mode-controller.js"></script>
-    <!-- v1.0.2-apk-v01 -->
+    
+    <!-- Apple Web App Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SportSphere">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <!-- v1.0.3-apk-ios-v01 -->
 </head>
 
 <body id="home">
@@ -434,6 +441,35 @@
     <!-- TOAST -->
     <div id="toast-msg" class="toast-msg"></div>
 
+    <!-- IOS INSTALLATION MODAL -->
+    <div id="ios-modal" class="modal-overlay">
+        <div class="modal-box glass" style="max-width: 400px; text-align: center;">
+            <button class="modal-close-btn" onclick="closeIOSModal()"><i class="fas fa-times"></i></button>
+            <div style="margin-bottom: 2rem;">
+                <i class="fab fa-apple" style="font-size: 4rem; color: var(--accent-primary); margin-bottom: 1rem; display: block;"></i>
+                <h3 style="font-family: 'Poppins', sans-serif; font-size: 1.5rem; margin-bottom: 0.5rem;">Install on iPhone</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Get the full SportSphere experience on your iOS device.</p>
+            </div>
+            
+            <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border);">
+                <div style="display: flex; gap: 15px; margin-bottom: 1.2rem;">
+                    <div style="width: 25px; height: 25px; background: var(--accent-primary); border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 800; flex-shrink: 0;">1</div>
+                    <p style="font-size: 0.85rem;">Open this site in <strong>Safari</strong> browser</p>
+                </div>
+                <div style="display: flex; gap: 15px; margin-bottom: 1.2rem;">
+                    <div style="width: 25px; height: 25px; background: var(--accent-primary); border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 800; flex-shrink: 0;">2</div>
+                    <p style="font-size: 0.85rem;">Tap the <strong>'Share'</strong> icon <i class="fas fa-external-link-alt" style="color: var(--accent-primary); margin-left: 5px;"></i> (Square with arrow) </p>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div style="width: 25px; height: 25px; background: var(--accent-primary); border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 800; flex-shrink: 0;">3</div>
+                    <p style="font-size: 0.85rem;">Select <strong>'Add to Home Screen'</strong> <i class="far fa-plus-square" style="color: var(--accent-primary); margin-left: 5px;"></i> from the menu</p>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="closeIOSModal()" style="width: 100%; margin-top: 2rem;">Got it!</button>
+        </div>
+    </div>
+
     <!-- SportSphere AI Assistant Widget -->
     <div id="ai-widget" class="ai-widget">
         <div id="ai-chat-window" class="glass ai-chat-window">
@@ -583,7 +619,11 @@
         }
 
         function showIOSManual() {
-            alert("To Install on iPhone:\n1. Open this in Safari\n2. Tap the 'Share' button (↑)\n3. Scroll down and tap 'Add to Home Screen' (⊞)");
+            document.getElementById('ios-modal').classList.add('open');
+        }
+
+        function closeIOSModal() {
+            document.getElementById('ios-modal').classList.remove('open');
         }
 
         // Register Service Worker
