@@ -14,6 +14,13 @@ Unlike traditional booking platforms, SportSphere introduces a health-first appr
 - **Major Clinical Reporting**: Generates professional PDF progression reports with historical data tables for long-term health tracking.
 
 ---
+## 🌐 Live Infrastructure
+SportSphere is now live on its primary domain:
+- **Production URL**: [https://sportsphere.biz](https://sportsphere.biz)
+- **Official Contact**: [info@sportsphere.biz](mailto:info@sportsphere.biz)
+- **Status**: SSL Secured (HTTPS) | SEO Optimized
+
+---
 
 ## 🚀 Key Features
 
@@ -43,9 +50,13 @@ SportSphere is designed to live where you play:
 - **On-Page Intelligence**: The SportSphere Brain (SSB) provides instant support for venue queries and sports-related logic.
 - **Multilingual**: Intelligent processing for both English and Sinhala queries.
 
-### 5. Institutional Documentation
+### 5. Institutional Documentation & SEO
 - **Corporate Receipt Engine**: Automated generation of branded PDF receipts featuring an **Official Verified Seal** (Code-drawn), structured billing sections, and formal policy footers.
 - **Health Reports**: Major PDF reports for progression tracking using biometric snapshots.
+- **SEO Optimization**: 
+  - **JSON-LD**: Rich snippets for search engine visibility.
+  - **Sitemap & Robots**: Automated traversal for Google/Bing indexing.
+  - **Canonical Links**: Ensured domain authority at sportsphere.biz.
 
 ---
 
@@ -63,7 +74,7 @@ SportSphere is designed to live where you play:
   - `users/{uid}/health_history`: Stores sub-collection records of fitness assessments.
   - `memories`: Global and user-bound media metadata.
 - **Cloud Storage**: Secure bucket storage for high-resolution sports memories.
-- **Hosting**: Distributed via GitHub Pages with auto-deploy pipelines.
+- **Hosting**: Distributed via GitHub Pages with Custom Domain Mapping at sportsphere.biz.
 
 ---
 
@@ -81,13 +92,15 @@ SportSphere is designed to live where you play:
 ├── user-dashboard.html # Player Portal
 ├── center-dashboard.html # Owner Portal
 ├── user-auth.html      # Authentication Gateway
+├── robots.txt          # Search Crawler Guidance
+├── sitemap.xml         # SEO Traversal Map
 └── sw.js               # PWA Service Worker (v8)
 ```
 
 ---
 
 ## 📥 Deployment Instructions
-1. **Clone**: `git clone https://github.com/izzath28/group-34--final-project.git`
+1. **Clone**: `git clone https://github.com/chirananimnaka/group-34--final-project.git`
 2. **Setup**: Update `js/firebase-config.js` with your specific Firebase project credentials.
 3. **Run**: Use a Live Server to open `index.html`. The Service Worker will automatically cache the local assets for PWA functionality.
 
