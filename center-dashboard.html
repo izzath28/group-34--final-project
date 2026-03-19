@@ -978,6 +978,16 @@
             const total = myBookings.reduce((s, b) => s + b.total, 0);
             const paid = myBookings.reduce((s, b) => s + (b.paymentStatus === 'Paid' ? b.total : 0), 0);
             
+            // Commission Logic for PDF
+            const bookingCount = myBookings.length;
+            let commRate = 0.025;
+            let level = "Normal";
+            if (bookingCount > 25) { commRate = 0.035; level = "Pro"; }
+            else if (bookingCount > 15) { commRate = 0.03; level = "Growth"; }
+
+            const commissionAmount = total * commRate;
+            const netRevenue = total - commissionAmount;
+
             doc.setDrawColor(230, 230, 230);
             doc.line(20, 75, 190, 75);
             
@@ -986,11 +996,21 @@
             doc.text(`Core Statistics`, 20, 85);
             
             doc.setFontSize(10);
-            doc.text(`Total Bookings: ${myBookings.length}`, 20, 95);
+            doc.text(`Total Bookings: ${myBookings.length} (${level} Tier)`, 20, 95);
             doc.text(`Gross Revenue: LKR ${total.toLocaleString()}`, 20, 102);
-            doc.text(`Collected (Paid): LKR ${paid.toLocaleString()}`, 20, 109);
-            doc.text(`Outstanding: LKR ${(total - paid).toLocaleString()}`, 20, 116);
+            doc.text(`Commission Rate: ${(commRate * 100).toFixed(1)}%`, 20, 109);
+            doc.text(`Commission Fee: LKR ${commissionAmount.toLocaleString()}`, 20, 116);
             
+            doc.setFont("helvetica", "bold");
+            doc.text(`Net Revenue: LKR ${netRevenue.toLocaleString()}`, 20, 125);
+            doc.setFont("helvetica", "normal");
+
+            doc.text(`Collected (Paid): LKR ${paid.toLocaleString()}`, 120, 95);
+            doc.text(`Outstanding: LKR ${(total - paid).toLocaleString()}`, 120, 102);
+            
+            doc.setDrawColor(200, 200, 200);
+            doc.line(20, 130, 190, 130);
+
             // Table
             const tableData = myBookings.map(b => [
                 b.date,
@@ -1001,7 +1021,7 @@
             ]);
             
             doc.autoTable({
-                startY: 125,
+                startY: 140,
                 head: [['Date', 'User', 'Sport', 'Amount (LKR)', 'Status']],
                 body: tableData,
                 theme: 'striped',
