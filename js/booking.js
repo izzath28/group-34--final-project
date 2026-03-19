@@ -192,16 +192,44 @@ function isRangeFree(centerId, startIdx, hours) {
 const STORAGE_KEY = "ss_bookings_v4";
 
 async function loadBookings() {
-    // fallback
+    let localData = [];
     try { 
         const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-        return Array.isArray(items) ? items.filter(b => b && typeof b === 'object') : [];
-    } catch(_) { return []; }
+        localData = Array.isArray(items) ? items.filter(b => b && typeof b === 'object') : [];
+    } catch(_) {}
+
+    // Online Sync
+    const fb = window.SS_FB;
+    const isOnline = window.SS_MODE && window.SS_MODE.isOnline();
+    if (fb && fb.auth && isOnline && !fb.disabled) {
+        const user = fb.auth.currentUser;
+        if (user) {
+            try {
+                const { db, methods } = fb;
+                const q = methods.query(
+                    methods.collection(db, `users/${user.uid}/bookings`), 
+                    methods.orderBy("bookedAtTimestamp", "desc")
+                );
+                const snap = await methods.getDocs(q);
+                const fbData = [];
+                snap.forEach(doc => fbData.push(doc.data()));
+                
+                if (fbData.length > 0) {
+                    // Update local cache with firestore data
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(fbData));
+                    return fbData;
+                }
+            } catch (e) {
+                console.warn("Firestore Booking Load Failed:", e);
+            }
+        }
+    }
+    return localData;
 }
 
 async function saveBookings(bookings) {
     try {
-        if (window.storage) {
+        if (window.storage && typeof window.storage.set === 'function') {
             await window.storage.set(STORAGE_KEY, JSON.stringify(bookings));
         }
     } catch (_) {}
@@ -654,6 +682,15 @@ window.finishBooking = async function(booking) {
     myBookings.unshift(booking);
     await saveBookings(myBookings);
 
+    // Sync to Firestore
+    const fb = window.SS_FB;
+    if (fb && fb.auth && fb.auth.currentUser && !fb.disabled) {
+        try {
+            const { db, methods } = fb;
+            await methods.setDoc(methods.doc(db, `users/${fb.auth.currentUser.uid}/bookings`, booking.id), booking);
+        } catch(e) { console.error("Firestore sync failed", e); }
+    }
+
     // Mark slots as taken
     for (let i = selectedStartIdx; i < selectedStartIdx + selectedHours; i++) {
         if (CENTER_SLOTS[selectedCenter.id][i]) CENTER_SLOTS[selectedCenter.id][i].taken = true;
@@ -831,6 +868,15 @@ window.cancelBooking = async function(id) {
     
     myBookings = myBookings.filter(b => b.id !== id);
     await saveBookings(myBookings);
+
+    // Sync deletion to Firestore
+    const fb = window.SS_FB;
+    if (fb && fb.auth && fb.auth.currentUser && !fb.disabled) {
+        try {
+            const { db, methods } = fb;
+            await methods.deleteDoc(methods.doc(db, `users/${fb.auth.currentUser.uid}/bookings`, id));
+        } catch(e) { console.error("Firestore delete sync failed", e); }
+    }
     renderMyBookings();
     
     if (isPaid) {
@@ -863,6 +909,15 @@ window.setRating = async function(bookingId, starCount) {
     booking.userRating = starCount;
     await saveBookings(myBookings);
     renderMyBookings();
+    
+    // Sync rating to Firestore
+    const fb = window.SS_FB;
+    if (fb && fb.auth && fb.auth.currentUser && !fb.disabled) {
+        try {
+            const { db, methods } = fb;
+            await methods.updateDoc(methods.doc(db, `users/${fb.auth.currentUser.uid}/bookings`, bookingId), { userRating: starCount });
+        } catch(e) { console.error("Firestore rating sync failed", e); }
+    }
     showToast(`⭐ Rated ${starCount} stars!`);
 };
 
@@ -1083,4 +1138,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     myBookings = await loadBookings();
     renderCenters();
     renderMyBookings();
+
+    // Setup real-time listener for Auth changes to sync cross-device
+    const checkFB = setInterval(() => {
+        if (window.SS_FB && window.SS_FB.methods && window.SS_FB.methods.onAuthStateChanged) {
+            clearInterval(checkFB);
+            window.SS_FB.methods.onAuthStateChanged(window.SS_FB.auth, async (user) => {
+                if (user && window.SS_MODE.isOnline() && !window.SS_FB.disabled) {
+                    console.log("📡 SportSphere Sync: Online User Detected, fetching remote bookings...");
+                    myBookings = await loadBookings();
+                    renderMyBookings();
+                }
+            });
+        }
+    }, 1000);
 });
