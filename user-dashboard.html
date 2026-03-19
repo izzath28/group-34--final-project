@@ -599,7 +599,7 @@
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                             <div class="form-group">
                                 <label>Sport Type</label>
-                                <select id="squad-sport" class="modal-input" required>
+                                <select id="squad-sport" class="modal-input" required onchange="populateVenueDatalist()">
                                     <option value="">Select Sport</option>
                                     <option>Football</option>
                                     <option>Cricket</option>
@@ -612,17 +612,16 @@
                             </div>
                             <div class="form-group">
                                 <label>Venue Name</label>
-                                <input type="text" id="squad-venue" class="modal-input" placeholder="e.g. Futsal World" required>
+                                <input type="text" id="squad-venue" class="modal-input" placeholder="e.g. Futsal World" list="venue-list" required oninput="handleVenueInput(this.value)" onfocus="populateVenueDatalist()">
+                                <datalist id="venue-list">
+                                    <!-- Populated dynamically -->
+                                </datalist>
                             </div>
                             <div class="form-group">
                                 <label>City</label>
-                                <select id="squad-city" class="modal-input" required>
+                                <select id="squad-city" class="modal-input" required onchange="populateVenueDatalist()">
                                     <option value="">Select City</option>
-                                    <option>Colombo</option>
-                                    <option>Kandy</option>
-                                    <option>Galle</option>
-                                    <option>Negombo</option>
-                                    <option>Jaffna</option>
+                                    <!-- Populated dynamically -->
                                 </select>
                             </div>
                             <div class="form-group">
@@ -839,6 +838,86 @@
         function initSquadFinder() {
             if (squadListener) return; // Already listening
             loadSquadSlots();
+            populateVenueDatalist();
+            populateCityDropdown();
+        }
+
+        function populateVenueDatalist() {
+            const datalist = document.getElementById('venue-list');
+            const sportSelect = document.getElementById('squad-sport');
+            const citySelect = document.getElementById('squad-city');
+            
+            const selectedSport = sportSelect ? sportSelect.value : "";
+            const selectedCity = citySelect ? citySelect.value : "";
+            
+            // Check global CENTERS from booking.js
+            const centersList = typeof CENTERS !== 'undefined' ? CENTERS : (window.CENTERS || []);
+            
+            if (!datalist || !centersList.length) {
+                console.warn("SportSphere: CENTERS data not found for datalist.");
+                return;
+            }
+            
+            datalist.innerHTML = '';
+            
+            let filteredVenues = centersList;
+            
+            // Filter by Sport
+            if (selectedSport && selectedSport !== "" && selectedSport !== "Select Sport") {
+                filteredVenues = filteredVenues.filter(c => c.sports && c.sports.includes(selectedSport));
+            }
+            
+            // Filter by City
+            if (selectedCity && selectedCity !== "" && selectedCity !== "Select City") {
+                filteredVenues = filteredVenues.filter(c => c.city === selectedCity);
+            }
+            
+            const venueNames = [...new Set(filteredVenues.map(c => c.name))].sort();
+            
+            venueNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                datalist.appendChild(option);
+            });
+        }
+
+        function populateCityDropdown() {
+            const citySelect = document.getElementById('squad-city');
+            const centersList = typeof CENTERS !== 'undefined' ? CENTERS : (window.CENTERS || []);
+            
+            if (!citySelect || !centersList.length) return;
+            
+            const selected = citySelect.value;
+            citySelect.innerHTML = '<option value="">Select City</option>';
+            
+            const cities = [...new Set(centersList.map(c => c.city).filter(Boolean))].sort();
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+            citySelect.value = selected;
+        }
+
+        function handleVenueInput(val) {
+            const centersList = typeof CENTERS !== 'undefined' ? CENTERS : (window.CENTERS || []);
+            if (!centersList.length) return;
+            
+            const match = centersList.find(c => c.name.toLowerCase() === val.toLowerCase());
+            if (match) {
+                // Auto-fill City
+                const citySelect = document.getElementById('squad-city');
+                if (citySelect) {
+                    citySelect.value = match.city;
+                }
+                
+                // If only one sport, auto-fill Sport Type
+                const sportSelect = document.getElementById('squad-sport');
+                if (sportSelect && match.sports && match.sports.length === 1) {
+                    sportSelect.value = match.sports[0];
+                }
+            }
         }
 
         function togglePostSlotForm() {
