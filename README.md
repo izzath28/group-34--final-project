@@ -36,6 +36,7 @@ SportSphere is designed to live where you play:
 - **Smart Filters**: Advanced search by sport type (Pickleball, Padel, Futsal, etc.), city, and indoor/outdoor status.
 - **Real-Time Duration Selector**: Dynamic slot booking from 1 to 5 hours with instant subtotal calculation.
 - **Secure Payments**: Integrated mock payment gateway (Visa/Mastercard) and "Pay Later" institutional options.
+- **Cloud Sync (New)**: Real-time synchronization of booking history across all devices (PC, Mobile, Tablet) when logged in.
 
 ### 3. Professional Dashboards
 - **User Portal**: Personalized space to track active reservations, health metrics, and "Match Day Memories."
@@ -45,6 +46,7 @@ SportSphere is designed to live where you play:
   - **Conflict Detection Engine**: Premium modals prevent hour changes that clash with active bookings.
   - **Revenue Analytics**: Real-time line graphs for weekly yield tracking.
   - **Security Lockdown**: Automatic field-locking for Venue ID and Name to enforce secure data ownership.
+- **Mobile-Responsive UI**: Optimized dashboards for mobile devices featuring a **modern bottom navigation bar** and responsive card layouts to prevent content clipping.
 
 ### 4. AI Smart Assistant (SSB Engine)
 - **On-Page Intelligence**: The SportSphere Brain (SSB) provides instant support for venue queries and sports-related logic.
@@ -72,6 +74,7 @@ SportSphere is designed to live where you play:
 - **Authentication**: Secure Google OAuth and Email/Password flows with 1-hour rolling sessions.
 - **Firestore (NoSQL Database)**:
   - `users/{uid}/health_history`: Stores sub-collection records of fitness assessments.
+  - `users/{uid}/bookings`: Cross-device persistence for reservation history and payment status.
   - `memories`: Global and user-bound media metadata.
 - **Cloud Storage**: Secure bucket storage for high-resolution sports memories.
 - **Hosting**: Distributed via GitHub Pages with Custom Domain Mapping at sportsphere.biz.
